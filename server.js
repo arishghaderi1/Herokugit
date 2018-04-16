@@ -1,26 +1,45 @@
-var express = require("express");
-var express_graphql = require("express-graphql");
-var { buildSchema } = require("graphql");
-// GraphQL schema
-var schema = buildSchema(`
-    type Query {
-        message: String
+const { graphql } = require("graphql");
+const { promisify } = require("bluebird");
+const Schema = require("./Schema");
+
+async function graphQLHandler(request, reply) {
+  const { query, variables = {} } = request.payload;
+  const result = await graphql(
+    Schema,
+    query,
+    {
+      db: request.db,
+      userId: "1"
+    },
+    variables
+  );
+  return reply(result);
+}
+
+export default async function runServer() {
+  try {
+    const server = new Hapi.Server();
+
+    // Make server methods promise friendly
+    for (const method of ["register", "start"]) {
+      server[method] = promisify(server[method], server);
     }
-`);
-// Root resolver
-var root = {
-  message: () => "Hello World!"
-};
-// Create an express server and a GraphQL endpoint
-var app = express();
-app.use(
-  "/graphql",
-  express_graphql({
-    schema: schema,
-    rootValue: root,
-    graphiql: true
-  })
-);
-app.listen(4000, () =>
-  console.log("Express GraphQL Server Now Running On localhost:4000/graphql")
-);
+
+    server.connection({
+      host: "localhost",
+      port: "3002"
+    });
+
+    server.route({
+      method: "POST",
+      path: "/",
+      handler: graphQLHandler
+    });
+
+    await server.start();
+
+    console.log("Server started at " + server.info.uri);
+  } catch (e) {
+    console.log(e);
+  }
+}
