@@ -266,9 +266,51 @@ router.get("/login", function(req, res, next) {
   }
 });
 
-router.patch("/:userId", (req, res, next) => {
-  res.status(200).json({
-    message: "Updated product"
+router.post("/changePassword", (req, res, next) => {
+  const today = new Date();
+  let appData = {
+    error: 1,
+    data: ""
+  };
+  let password = req.body.password;
+
+  function saltHashPassword(userpassword) {
+    var salt = genRandomString(12); /** Gives us salt of length 12 */
+    var passwordData = sha512(userpassword, salt);
+    return { hashed: passwordData.passwordHash, salt: passwordData.salt };
+  }
+
+  const result = saltHashPassword(password);
+
+  const userData = {
+    email: req.body.email,
+    password_digest: result.hashed,
+    salt: result.salt,
+    updated_at: today
+  };
+
+  database.connection.getConnection(function(err, connection) {
+    if (err) {
+      appData["error"] = 1;
+      appData["data"] = "Internal Server Error";
+      res.status(500).json(appData);
+    } else {
+      connection.query(
+        "UPDATE users SET password_digest=?, salt=? WHERE email=?",
+        [userData.password_digest, userData.salt, userData.email],
+        function(err, rows, fields) {
+          if (!err) {
+            appData.error = 0;
+            appData["data"] = "Password successfully changed!";
+            res.status(200).json(appData);
+          } else {
+            appData["data"] = "Error Occured!";
+            res.status(400).json(appData);
+          }
+        }
+      );
+      connection.release();
+    }
   });
 });
 

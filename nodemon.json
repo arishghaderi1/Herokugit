@@ -6,7 +6,7 @@
     "db_port": "3306",
     "db_host":
       "eserviceportalbetadb.c4uaygjuwafc.ca-central-1.rds.amazonaws.com",
-    "PORT": 3002,
+    "PORT": 3001,
     "SECRET": "wsibinnovation"
   }
 }
