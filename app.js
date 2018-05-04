@@ -9,6 +9,7 @@ const userRoutes = require("./api/routes/users");
 const claimRoutes = require("./api/routes/claims");
 const employerRoutes = require("./api/routes/employers");
 const doctorRoutes = require("./api/routes/doctors");
+const notificationRoutes = require("./api/routes/notifications");
 
 app.use(cors());
 
@@ -61,6 +62,7 @@ app.use((req, res, next) => {
 app.use("/claims", claimRoutes);
 app.use("/employers", employerRoutes);
 app.use("/doctors", doctorRoutes);
+app.use("/notifications", notificationRoutes);
 
 // Error handling
 app.use((req, res, next) => {

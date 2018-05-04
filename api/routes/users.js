@@ -21,6 +21,12 @@ const sha512 = function(password, salt) {
   };
 };
 
+function saltHashPassword(userpassword) {
+  var salt = genRandomString(12); /** Gives us salt of length 12 */
+  var passwordData = sha512(userpassword, salt);
+  return { hashed: passwordData.passwordHash, salt: passwordData.salt };
+}
+
 process.env.SECRET_KEY = "wsib_potatoes";
 
 // Register a new user
@@ -30,20 +36,15 @@ router.post("/register", function(req, res) {
     error: 1,
     data: ""
   };
-  let password = req.body.password;
 
-  function saltHashPassword(userpassword) {
-    var salt = genRandomString(12); /** Gives us salt of length 12 */
-    var passwordData = sha512(userpassword, salt);
-    return { hashed: passwordData.passwordHash, salt: passwordData.salt };
-  }
+  let password = req.body.password;
 
   const result = saltHashPassword(password);
 
   const userData = {
     name: req.body.name,
     email: req.body.email,
-    password_digest: result.hashed,
+    password: result.hashed,
     salt: result.salt,
     view: "employee",
     created_at: today
@@ -55,7 +56,7 @@ router.post("/register", function(req, res) {
       appData["data"] = "Internal Server Error";
       res.status(500).json(appData);
     } else {
-      connection.query("INSERT INTO users SET ?", userData, function(
+      connection.query("INSERT INTO User SET ?", userData, function(
         err,
         rows,
         fields
@@ -240,13 +241,6 @@ router.get("/login", function(req, res, next) {
                 appData["data"] = "Error Occured!";
                 res.status(400).json(appData);
               } else {
-                const token = jwt.sign(
-                  { data: rows[0].id },
-                  process.env.SECRET_KEY,
-                  {
-                    expiresIn: 604800
-                  }
-                );
                 appData.error = 0;
                 appData["auth"] = true;
                 appData["token"] = token;
