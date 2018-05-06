@@ -12,7 +12,7 @@ router.get("/claims/:currentUserId", (req, res, next) => {
       res.status(500).json(appData);
     } else {
       connection.query(
-        "SELECT User.name, User.id, Claim.* FROM User, Claim WHERE User.id = Claim.userId AND Claim.doctorId = ?",
+        "SELECT User.name as name, User.id as userId, Claim.* FROM User, Claim WHERE User.id = Claim.userId AND Claim.doctorId = ?",
         [id],
         function(err, rows, fields) {
           if (err) {
@@ -30,7 +30,91 @@ router.get("/claims/:currentUserId", (req, res, next) => {
   });
 });
 
-router.patch("/updateAudiogram", (req, res, next) => {});
+router.get("/audiograms/:claimId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.claimId;
+  database.connection.getConnection(function(err, connection) {
+    if (err) {
+      appData["error"] = 1;
+      appData["data"] = "Internal Server Error";
+      res.status(500).json(appData);
+    } else {
+      connection.query(
+        "SELECT * FROM Audiogram WHERE claimId = ?",
+        [id],
+        function(err, rows, fields) {
+          if (err) {
+            appData.error = 1;
+            appData["data"] = "Error Occured!";
+            console.log(err);
+            res.status(400).json(appData);
+          } else {
+            res.status(200).json(rows);
+          }
+        }
+      );
+      connection.release();
+    }
+  });
+});
+
+router.post("/updateAudiogram", (req, res, next) => {
+  let appData = {};
+  let data = {
+    doctorId: req.body.currentUserId,
+    claimId: req.body.claimId,
+    audioId: req.body.audiogramId || false,
+    audiogram: req.body.data,
+    comments: req.body.comments
+  };
+  if (audioId) {
+    database.connection.getConnection(function(err, connection) {
+      if (err) {
+        appData["error"] = 1;
+        appData["data"] = "Internal Server Error";
+        res.status(500).json(appData);
+      } else {
+        connection.query(
+          "UPDATE Audiogram SET data = ?, comments = ? WHERE id = ?",
+          [data.audiogram, data.comments, data.audioId],
+          function(err, rows, fields) {
+            if (err) {
+              console.log("Error in sql");
+            } else {
+              appData["error"] = 0;
+              appData["data"] = "Updated audiogram";
+              res.status(201).json(appData);
+            }
+          }
+        );
+        connection.release();
+      }
+    });
+  } else {
+    database.connection.getConnection(function(err, connection) {
+      if (err) {
+        appData["error"] = 1;
+        appData["data"] = "Internal Server Error";
+        res.status(500).json(appData);
+      } else {
+        connection.query(
+          "INSERT INTO Audiogram (claimId,doctorId,data,comments) VALUES (?,?,?,?)",
+          [data.claimId, data.doctorId, data.audiogram, data.comments],
+          function(err, rows, fields) {
+            if (err) {
+              console.log("Error in sql");
+            } else {
+              appData["error"] = 0;
+              appData["data"] = "New Audiogram created.";
+              res.status(201).json(appData);
+            }
+          }
+        );
+        connection.release();
+      }
+    });
+  }
+});
 
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
@@ -130,8 +214,6 @@ router.post("/createClaim", (req, res, next) => {
             console.log(err);
             res.status(400).json(appData);
           } else {
-            appData.error = 0;
-            appData["data"] = "Successful claim creation";
             res.status(200).json(rows);
             next();
           }
