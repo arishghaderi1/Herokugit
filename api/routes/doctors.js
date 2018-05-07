@@ -30,6 +30,34 @@ router.get("/claims/:currentUserId", (req, res, next) => {
   });
 });
 
+router.get("/patientInfo/:claimId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.claimId;
+  database.connection.getConnection(function(err, connection) {
+    if (err) {
+      appData["error"] = 1;
+      appData["data"] = "Internal Server Error";
+      res.status(500).json(appData);
+    } else {
+      connection.query(
+        "SELECT MedicalInfo.*, Claim.id as claimId FROM MedicalInfo, Claim WHERE Claim.userId = MedicalInfo.userId AND Claim.id = ?",
+        [id],
+        function(err, rows, fields) {
+          if (err) {
+            appData.error = 1;
+            appData["data"] = "Error Occured!";
+            console.log(err);
+            res.status(400).json(appData);
+          } else {
+            res.status(200).json(rows);
+          }
+        }
+      );
+      connection.release();
+    }
+  });
+});
+
 router.get("/audiograms/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
