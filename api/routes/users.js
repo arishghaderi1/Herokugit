@@ -12,20 +12,26 @@ const genRandomString = function(length) {
 };
 
 const sha512 = function(password, salt) {
-  var hash = crypto.createHmac("sha512", salt); /** Hashing algorithm sha512 */
+  const hash = crypto.createHmac(
+    "sha512",
+    salt
+  ); /** Hashing algorithm sha512 */
   hash.update(password);
-  var value = hash.digest("hex");
+  const value = hash.digest("hex");
   return {
     salt: salt,
     passwordHash: value
   };
 };
 
-function saltHashPassword(userpassword) {
-  var salt = genRandomString(12); /** Gives us salt of length 12 */
-  var passwordData = sha512(userpassword, salt);
+const saltHashPassword = function(userpassword, userSalt = null) {
+  const salt =
+    userSalt === null
+      ? genRandomString(12)
+      : userSalt; /** Gives us salt of length 12 */
+  const passwordData = sha512(userpassword, salt);
   return { hashed: passwordData.passwordHash, salt: passwordData.salt };
-}
+};
 
 process.env.SECRET_KEY = "wsib_potatoes";
 
@@ -91,7 +97,7 @@ router.post("/login", function(req, res, next) {
       res.status(500).json(appData);
     } else {
       connection.query(
-        "SELECT salt FROM users WHERE email = ?",
+        "SELECT salt FROM User WHERE email = ?",
         user.email,
         function(err, rows, fields) {
           if (err) {
@@ -121,7 +127,7 @@ router.post("/login", function(req, res, next) {
       res.status(500).json(appData);
     } else {
       connection.query(
-        "SELECT * FROM users WHERE email = ?",
+        "SELECT * FROM User WHERE email = ?",
         user.email,
         function(err, rows, fields) {
           if (err) {
@@ -131,15 +137,8 @@ router.post("/login", function(req, res, next) {
             res.status(400).json(appData);
           } else {
             if (rows.length > 0) {
-              function saltHashPassword(userpassword) {
-                var salt = user.salt; /** Use Found Salt */
-                var passwordData = sha512(userpassword, salt);
-                return { hashed: passwordData.passwordHash };
-              }
-
-              const result = saltHashPassword(user.password);
-
-              if (rows[0].password_digest === result.hashed) {
+              const result = saltHashPassword(user.password, user.salt);
+              if (rows[0].password === result.hashed) {
                 const token = jwt.sign(
                   { data: rows[0].id },
                   process.env.SECRET_KEY,
@@ -204,7 +203,7 @@ router.get("/getUsers", function(req, res) {
       appData["data"] = "Internal Server Error";
       res.status(500).json(appData);
     } else {
-      connection.query("SELECT *FROM users", function(err, rows, fields) {
+      connection.query("SELECT * FROM User", function(err, rows, fields) {
         if (!err) {
           appData["error"] = 0;
           appData["data"] = rows;
@@ -231,24 +230,24 @@ router.get("/login", function(req, res, next) {
           appData["data"] = "Improper Token";
           res.status(400).json(appData);
         } else {
-          connection.query(
-            "SELECT * FROM users WHERE id = ?",
-            id.data,
-            function(err, rows, fields) {
-              if (err) {
-                appData.error = 1;
-                appData["auth"] = false;
-                appData["data"] = "Error Occured!";
-                res.status(400).json(appData);
-              } else {
-                appData.error = 0;
-                appData["auth"] = true;
-                appData["token"] = token;
-                appData["data"] = rows[0];
-                res.status(200).json(appData);
-              }
+          connection.query("SELECT * FROM User WHERE id = ?", id.data, function(
+            err,
+            rows,
+            fields
+          ) {
+            if (err) {
+              appData.error = 1;
+              appData["auth"] = false;
+              appData["data"] = "Error Occured!";
+              res.status(400).json(appData);
+            } else {
+              appData.error = 0;
+              appData["auth"] = true;
+              appData["token"] = token;
+              appData["data"] = rows[0];
+              res.status(200).json(appData);
             }
-          );
+          });
         }
       });
     });
@@ -278,7 +277,7 @@ router.post("/changePassword", (req, res, next) => {
 
   const userData = {
     email: req.body.email,
-    password_digest: result.hashed,
+    password: result.hashed,
     salt: result.salt,
     updated_at: today
   };
@@ -290,8 +289,8 @@ router.post("/changePassword", (req, res, next) => {
       res.status(500).json(appData);
     } else {
       connection.query(
-        "UPDATE users SET password_digest=?, salt=? WHERE email=?",
-        [userData.password_digest, userData.salt, userData.email],
+        "UPDATE User SET password=?, salt=? WHERE email=?",
+        [userData.password, userData.salt, userData.email],
         function(err, rows, fields) {
           if (!err) {
             appData.error = 0;
