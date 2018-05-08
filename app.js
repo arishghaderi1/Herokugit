@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const mysql = require("mysql");
 
 const userRoutes = require("./api/routes/users");
 const claimRoutes = require("./api/routes/claims");

@@ -5,83 +5,56 @@ const database = require("../db.js");
 router.get("/claims/:currentUserId", (req, res, next) => {
   let appData = {};
   const id = req.params.currentUserId;
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
-    } else {
-      connection.query(
-        "SELECT User.name as name, User.id as userId, Claim.* FROM User, Claim WHERE User.id = Claim.userId AND Claim.doctorId = ?",
-        [id],
-        function(err, rows, fields) {
-          if (err) {
-            appData.error = 1;
-            appData["data"] = "Error Occured!";
-            console.log(err);
-            res.status(400).json(appData);
-          } else {
-            res.status(200).json(rows);
-          }
-        }
-      );
-      connection.release();
+  database.query(
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.* FROM User, Claim WHERE User.id = Claim.userId AND Claim.doctorId = ?",
+    [id],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
     }
-  });
+  );
 });
 
 router.get("/patientInfo/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
-    } else {
-      connection.query(
-        "SELECT MedicalInfo.*, Claim.id as claimId FROM MedicalInfo, Claim WHERE Claim.userId = MedicalInfo.userId AND Claim.id = ?",
-        [id],
-        function(err, rows, fields) {
-          if (err) {
-            appData.error = 1;
-            appData["data"] = "Error Occured!";
-            console.log(err);
-            res.status(400).json(appData);
-          } else {
-            res.status(200).json(rows);
-          }
-        }
-      );
-      connection.release();
+  database.query(
+    "SELECT MedicalInfo.*, Claim.id as claimId FROM MedicalInfo, Claim WHERE Claim.userId = MedicalInfo.userId AND Claim.id = ?",
+    [id],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
     }
-  });
+  );
 });
 
 router.get("/audiograms/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
-  database.connection.getConnection(function(err, connection) {
+  database.query("SELECT * FROM Audiogram WHERE claimId = ?", [id], function(
+    err,
+    rows,
+    fields
+  ) {
     if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
     } else {
-      connection.query(
-        "SELECT * FROM Audiogram WHERE claimId = ?",
-        [id],
-        function(err, rows, fields) {
-          if (err) {
-            appData.error = 1;
-            appData["data"] = "Error Occured!";
-            console.log(err);
-            res.status(400).json(appData);
-          } else {
-            res.status(200).json(rows);
-          }
-        }
-      );
-      connection.release();
+      res.status(200).json(rows);
     }
   });
 });
@@ -96,51 +69,33 @@ router.post("/updateAudiogram", (req, res, next) => {
     comments: req.body.comments
   };
   if (audioId) {
-    database.connection.getConnection(function(err, connection) {
-      if (err) {
-        appData["error"] = 1;
-        appData["data"] = "Internal Server Error";
-        res.status(500).json(appData);
-      } else {
-        connection.query(
-          "UPDATE Audiogram SET data = ?, comments = ? WHERE id = ?",
-          [data.audiogram, data.comments, data.audioId],
-          function(err, rows, fields) {
-            if (err) {
-              console.log("Error in sql");
-            } else {
-              appData["error"] = 0;
-              appData["data"] = "Updated audiogram";
-              res.status(201).json(appData);
-            }
-          }
-        );
-        connection.release();
+    database.query(
+      "UPDATE Audiogram SET data = ?, comments = ? WHERE id = ?",
+      [data.audiogram, data.comments, data.audioId],
+      function(err, rows, fields) {
+        if (err) {
+          console.log("Error in sql");
+        } else {
+          appData["error"] = 0;
+          appData["data"] = "Updated audiogram";
+          res.status(201).json(appData);
+        }
       }
-    });
+    );
   } else {
-    database.connection.getConnection(function(err, connection) {
-      if (err) {
-        appData["error"] = 1;
-        appData["data"] = "Internal Server Error";
-        res.status(500).json(appData);
-      } else {
-        connection.query(
-          "INSERT INTO Audiogram (claimId,doctorId,data,comments) VALUES (?,?,?,?)",
-          [data.claimId, data.doctorId, data.audiogram, data.comments],
-          function(err, rows, fields) {
-            if (err) {
-              console.log("Error in sql");
-            } else {
-              appData["error"] = 0;
-              appData["data"] = "New Audiogram created.";
-              res.status(201).json(appData);
-            }
-          }
-        );
-        connection.release();
+    database.query(
+      "INSERT INTO Audiogram (claimId,doctorId,data,comments) VALUES (?,?,?,?)",
+      [data.claimId, data.doctorId, data.audiogram, data.comments],
+      function(err, rows, fields) {
+        if (err) {
+          console.log("Error in sql");
+        } else {
+          appData["error"] = 0;
+          appData["data"] = "New Audiogram created.";
+          res.status(201).json(appData);
+        }
       }
-    });
+    );
   }
 });
 
@@ -157,60 +112,42 @@ router.post("/createClaim", (req, res, next) => {
     notes: req.body.notes || "",
     userId: null
   };
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
-    } else {
-      connection.query(
-        "SELECT id FROM User WHERE email = ? LIMIT 1",
-        data.email,
-        function(err, rows, fields) {
-          if (err) {
-            console.log("Error in sql");
-          } else {
-            if (rows.length > 0) {
-              data.userId = rows[0].id;
-              res.locals.data = data;
-              next();
-            } else {
-              res.locals.data = data;
-              next();
-            }
-          }
+  database.query(
+    "SELECT id FROM User WHERE email = ? LIMIT 1",
+    data.email,
+    function(err, rows, fields) {
+      if (err) {
+        console.log("Error in sql");
+      } else {
+        if (rows.length > 0) {
+          data.userId = rows[0].id;
+          res.locals.data = data;
+          next();
+        } else {
+          res.locals.data = data;
+          next();
         }
-      );
-      connection.release();
+      }
     }
-  });
+  );
 });
 
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
   if (res.locals.data.userId === null) {
     const data = res.locals.data;
-    database.connection.getConnection(function(err, connection) {
-      if (err) {
-        appData["error"] = 1;
-        appData["data"] = "Internal Server Error";
-        res.status(500).json(appData);
-      } else {
-        connection.query(
-          "INSERT INTO User (name, email, phone) VALUES(?, ?, ?)",
-          [data.name, data.email, data.phone],
-          function(err, rows, fields) {
-            if (err) {
-              appData.error = 1;
-              appData["data"] = "Error Occured!";
-            } else {
-              res.locals.data.userId = rows.insertId;
-            }
-          }
-        );
-        connection.release();
+    database.query(
+      "INSERT INTO User (name, email, phone) VALUES(?, ?, ?)",
+      [data.name, data.email, data.phone],
+      function(err, rows, fields) {
+        if (err) {
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+        } else {
+          res.locals.data.userId = rows.insertId;
+        }
       }
-    });
+    );
   }
   next();
 });
@@ -219,37 +156,28 @@ router.post("/createClaim", (req, res, next) => {
   let appData = {};
   const data = res.locals.data;
   const date = new Date();
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
-    } else {
-      connection.query(
-        "INSERT INTO Claim (userId, doctorId, companyId, created_at, status, injuryType, notes) VALUES(?,?,?,?,'started',?,?)",
-        [
-          data.userId,
-          data.doctorId,
-          data.companyId,
-          date,
-          data.injuryType,
-          data.notes
-        ],
-        function(err, rows, fields) {
-          if (err) {
-            appData.error = 1;
-            appData["data"] = "Error Occured!";
-            console.log(err);
-            res.status(400).json(appData);
-          } else {
-            res.status(200).json(rows);
-            next();
-          }
-        }
-      );
-      connection.release();
+  database.query(
+    "INSERT INTO Claim (userId, doctorId, companyId, created_at, status, injuryType, notes) VALUES(?,?,?,?,'started',?,?)",
+    [
+      data.userId,
+      data.doctorId,
+      data.companyId,
+      date,
+      data.injuryType,
+      data.notes
+    ],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+        next();
+      }
     }
-  });
+  );
 });
 
 router.post("/createClaim", (req, res, next) => {
@@ -258,27 +186,18 @@ router.post("/createClaim", (req, res, next) => {
   const action = "new claim";
   const body =
     "A new claim was created for you. Please fill out any additional details and work history.";
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
-    } else {
-      connection.query(
-        "INSERT INTO Notification (userId, action, body) VALUES(?, ?, ?)",
-        [data.userId, action, body],
-        function(err, rows, fields) {
-          if (err) {
-            appData.error = 1;
-            appData["data"] = "Error Occured!";
-          } else {
-            res.locals.data.userId = rows.insertId;
-          }
-        }
-      );
-      connection.release();
+  database.query(
+    "INSERT INTO Notification (userId, action, body) VALUES(?, ?, ?)",
+    [data.userId, action, body],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+      } else {
+        res.locals.data.userId = rows.insertId;
+      }
     }
-  });
+  );
   next();
 });
 
@@ -329,35 +248,27 @@ router.post("/createClaim", (req, res, next) => {
       eta: 1
     }
   ];
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
-    } else {
-      nodeArray.map((node, index) => {
-        connection.query(
-          "INSERT INTO NodeArray (userId,nodeName,nodeDetails,nodeState,nextSteps,created_at) VALUES(?,?,?,?,?,?)",
-          [
-            node.userId,
-            node.nodeName,
-            node.nodeDetails,
-            node.nodeState,
-            node.nextSteps,
-            date
-          ],
-          function(err, rows, fields) {
-            if (err) {
-              appData.error = 1;
-              appData["data"] = "Error Occured!";
-            } else {
-              res.locals.data.user_id = rows.insertId;
-            }
-          }
-        );
-      });
-      connection.release();
-    }
+
+  nodeArray.map((node, index) => {
+    database.query(
+      "INSERT INTO NodeArray (userId,nodeName,nodeDetails,nodeState,nextSteps,created_at) VALUES(?,?,?,?,?,?)",
+      [
+        node.userId,
+        node.nodeName,
+        node.nodeDetails,
+        node.nodeState,
+        node.nextSteps,
+        date
+      ],
+      function(err, rows, fields) {
+        if (err) {
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+        } else {
+          res.locals.data.user_id = rows.insertId;
+        }
+      }
+    );
   });
 });
 

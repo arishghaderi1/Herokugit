@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const database = require("../db.js");
+const database = require("../db");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
@@ -56,27 +56,18 @@ router.post("/register", function(req, res) {
     created_at: today
   };
 
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
+  database.query("INSERT INTO User SET ?", userData, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (!err) {
+      appData.error = 0;
+      appData["data"] = "User registered successfully!";
+      res.status(201).json(appData);
     } else {
-      connection.query("INSERT INTO User SET ?", userData, function(
-        err,
-        rows,
-        fields
-      ) {
-        if (!err) {
-          appData.error = 0;
-          appData["data"] = "User registered successfully!";
-          res.status(201).json(appData);
-        } else {
-          appData["data"] = "Error Occured!";
-          res.status(400).json(appData);
-        }
-      });
-      connection.release();
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
     }
   });
 });
@@ -89,29 +80,21 @@ router.post("/login", function(req, res, next) {
     password: req.body.password,
     salt: ""
   };
-  database.connection.getConnection(function(err, connection) {
+  database.query("SELECT salt FROM User WHERE email = ?", user.email, function(
+    err,
+    rows,
+    fields
+  ) {
     if (err) {
-      appData["error"] = 1;
+      console.log(err);
+      appData.error = 1;
       appData["auth"] = false;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
     } else {
-      connection.query(
-        "SELECT salt FROM User WHERE email = ?",
-        user.email,
-        function(err, rows, fields) {
-          if (err) {
-            appData.error = 1;
-            appData["auth"] = false;
-            appData["data"] = "Error Occured!";
-            res.status(400).json(appData);
-          } else {
-            user.salt = rows[0].salt;
-            res.locals.user = user;
-            next();
-          }
-        }
-      );
+      user.salt = rows[0].salt;
+      res.locals.user = user;
+      next();
     }
   });
 });
@@ -119,54 +102,40 @@ router.post("/login", function(req, res, next) {
 router.post("/login", function(req, res, next) {
   let appData = {};
   const user = res.locals.user;
-  database.connection.getConnection(function(err, connection) {
+  database.query("SELECT * FROM User WHERE email = ?", user.email, function(
+    err,
+    rows,
+    fields
+  ) {
     if (err) {
-      appData["error"] = 1;
+      appData.error = 1;
       appData["auth"] = false;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
     } else {
-      connection.query(
-        "SELECT * FROM User WHERE email = ?",
-        user.email,
-        function(err, rows, fields) {
-          if (err) {
-            appData.error = 1;
-            appData["auth"] = false;
-            appData["data"] = "Error Occured!";
-            res.status(400).json(appData);
-          } else {
-            if (rows.length > 0) {
-              const result = saltHashPassword(user.password, user.salt);
-              if (rows[0].password === result.hashed) {
-                const token = jwt.sign(
-                  { data: rows[0].id },
-                  process.env.SECRET_KEY,
-                  {
-                    expiresIn: 604800
-                  }
-                );
-                appData.error = 0;
-                appData["auth"] = true;
-                appData["token"] = token;
-                appData["data"] = rows[0];
-                res.status(200).json(appData);
-              } else {
-                appData.error = 1;
-                appData["auth"] = false;
-                appData["data"] = "Email and Password does not match";
-                res.status(404).json(appData);
-              }
-            } else {
-              appData.error = 1;
-              appData["auth"] = false;
-              appData["data"] = "Email does not exists!";
-              res.status(404).json(appData);
-            }
-          }
+      if (rows.length > 0) {
+        const result = saltHashPassword(user.password, user.salt);
+        if (rows[0].password === result.hashed) {
+          const token = jwt.sign({ data: rows[0].id }, process.env.SECRET_KEY, {
+            expiresIn: 604800
+          });
+          appData.error = 0;
+          appData["auth"] = true;
+          appData["token"] = token;
+          appData["data"] = rows[0];
+          res.status(200).json(appData);
+        } else {
+          appData.error = 1;
+          appData["auth"] = false;
+          appData["data"] = "Email and Password does not match";
+          res.status(404).json(appData);
         }
-      );
-      connection.release();
+      } else {
+        appData.error = 1;
+        appData["auth"] = false;
+        appData["data"] = "Email does not exists!";
+        res.status(404).json(appData);
+      }
     }
   });
 });
@@ -197,23 +166,14 @@ router.use(function(req, res, next) {
 router.get("/getUsers", function(req, res) {
   const token = req.body.token || req.headers["token"];
   let appData = {};
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
+  database.query("SELECT * FROM User", function(err, rows, fields) {
+    if (!err) {
+      appData["error"] = 0;
+      appData["data"] = rows;
+      res.status(200).json(appData);
     } else {
-      connection.query("SELECT * FROM User", function(err, rows, fields) {
-        if (!err) {
-          appData["error"] = 0;
-          appData["data"] = rows;
-          res.status(200).json(appData);
-        } else {
-          appData["data"] = "No data found";
-          res.status(404).json(appData);
-        }
-      });
-      connection.release();
+      appData["data"] = "No data found";
+      res.status(404).json(appData);
     }
   });
 });
@@ -223,31 +183,22 @@ router.get("/login", function(req, res, next) {
   const token = req.body.token || req.headers["token"];
   if (token) {
     jwt.verify(token, process.env.SECRET_KEY, function(err, id) {
-      database.connection.getConnection(function(err, connection) {
+      database.query("SELECT * FROM User WHERE id = ?", id.data, function(
+        err,
+        rows,
+        fields
+      ) {
         if (err) {
-          appData["error"] = 1;
+          appData.error = 1;
           appData["auth"] = false;
-          appData["data"] = "Improper Token";
+          appData["data"] = "Error Occured!";
           res.status(400).json(appData);
         } else {
-          connection.query("SELECT * FROM User WHERE id = ?", id.data, function(
-            err,
-            rows,
-            fields
-          ) {
-            if (err) {
-              appData.error = 1;
-              appData["auth"] = false;
-              appData["data"] = "Error Occured!";
-              res.status(400).json(appData);
-            } else {
-              appData.error = 0;
-              appData["auth"] = true;
-              appData["token"] = token;
-              appData["data"] = rows[0];
-              res.status(200).json(appData);
-            }
-          });
+          appData.error = 0;
+          appData["auth"] = true;
+          appData["token"] = token;
+          appData["data"] = rows[0];
+          res.status(200).json(appData);
         }
       });
     });
@@ -267,12 +218,6 @@ router.post("/changePassword", (req, res, next) => {
   };
   let password = req.body.password;
 
-  function saltHashPassword(userpassword) {
-    var salt = genRandomString(12); /** Gives us salt of length 12 */
-    var passwordData = sha512(userpassword, salt);
-    return { hashed: passwordData.passwordHash, salt: passwordData.salt };
-  }
-
   const result = saltHashPassword(password);
 
   const userData = {
@@ -282,29 +227,20 @@ router.post("/changePassword", (req, res, next) => {
     updated_at: today
   };
 
-  database.connection.getConnection(function(err, connection) {
-    if (err) {
-      appData["error"] = 1;
-      appData["data"] = "Internal Server Error";
-      res.status(500).json(appData);
-    } else {
-      connection.query(
-        "UPDATE User SET password=?, salt=? WHERE email=?",
-        [userData.password, userData.salt, userData.email],
-        function(err, rows, fields) {
-          if (!err) {
-            appData.error = 0;
-            appData["data"] = "Password successfully changed!";
-            res.status(200).json(appData);
-          } else {
-            appData["data"] = "Error Occured!";
-            res.status(400).json(appData);
-          }
-        }
-      );
-      connection.release();
+  database.query(
+    "UPDATE User SET password=?, salt=? WHERE email=?",
+    [userData.password, userData.salt, userData.email],
+    function(err, rows, fields) {
+      if (!err) {
+        appData.error = 0;
+        appData["data"] = "Password successfully changed!";
+        res.status(200).json(appData);
+      } else {
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
     }
-  });
+  );
 });
 
 router.delete("/:userId", (req, res, next) => {
