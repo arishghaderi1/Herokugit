@@ -99,9 +99,28 @@ router.post("/updateAudiogram", (req, res, next) => {
   }
 });
 
+router.get("/findPatient/:email", (req, res, next) => {
+  let appData = {};
+  const email = req.params.email;
+  database.query(
+    "SELECT User.name FROM User WHERE email LIKE CONCAT('%', ? ,'%') LIMIT 5",
+    [email],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
+    }
+  );
+});
+
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
-  let data = {
+  let claimData = {
     doctorId: req.body.currentUserId,
     companyId: req.body.currentCompanyId || null,
     name: req.body.name,
@@ -114,17 +133,17 @@ router.post("/createClaim", (req, res, next) => {
   };
   database.query(
     "SELECT id FROM User WHERE email = ? LIMIT 1",
-    data.email,
+    claimData.email,
     function(err, rows, fields) {
       if (err) {
         console.log("Error in sql");
       } else {
         if (rows.length > 0) {
-          data.userId = rows[0].id;
-          res.locals.data = data;
+          claimData.userId = rows[0].id;
+          res.locals.claimData = claimData;
           next();
         } else {
-          res.locals.data = data;
+          res.locals.claimData = claimData;
           next();
         }
       }
@@ -134,17 +153,17 @@ router.post("/createClaim", (req, res, next) => {
 
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
-  if (res.locals.data.userId === null) {
-    const data = res.locals.data;
+  if (res.locals.claimData.userId === null) {
+    const data = res.locals.cliamData;
     database.query(
       "INSERT INTO User (name, email, phone) VALUES(?, ?, ?)",
-      [data.name, data.email, data.phone],
+      [claimData.name, claimData.email, claimData.phone],
       function(err, rows, fields) {
         if (err) {
           appData.error = 1;
           appData["data"] = "Error Occured!";
         } else {
-          res.locals.data.userId = rows.insertId;
+          res.locals.claimData.userId = rows.insertId;
         }
       }
     );
@@ -154,17 +173,17 @@ router.post("/createClaim", (req, res, next) => {
 
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
-  const data = res.locals.data;
+  const claimData = res.locals.claimData;
   const date = new Date();
   database.query(
     "INSERT INTO Claim (userId, doctorId, companyId, created_at, status, injuryType, notes) VALUES(?,?,?,?,'started',?,?)",
     [
-      data.userId,
-      data.doctorId,
-      data.companyId,
+      claimData.userId,
+      claimData.doctorId,
+      claimData.companyId,
       date,
-      data.injuryType,
-      data.notes
+      claimData.injuryType,
+      claimData.notes
     ],
     function(err, rows, fields) {
       if (err) {
@@ -182,19 +201,20 @@ router.post("/createClaim", (req, res, next) => {
 
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
-  const data = res.locals.data;
+  const claimData = res.locals.claimData;
   const action = "new claim";
   const body =
     "A new claim was created for you. Please fill out any additional details and work history.";
   database.query(
     "INSERT INTO Notification (userId, action, body) VALUES(?, ?, ?)",
-    [data.userId, action, body],
+    [claimData.userId, action, body],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
         appData["data"] = "Error Occured!";
       } else {
-        res.locals.data.userId = rows.insertId;
+        appData.error = 0;
+        appData["data"] = "Successfully created Notification!";
       }
     }
   );
@@ -203,11 +223,11 @@ router.post("/createClaim", (req, res, next) => {
 
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
-  const data = res.locals.data;
+  const claimData = res.locals.claimData;
   const date = new Date();
   const nodeArray = [
     {
-      userId: data.userId,
+      userId: claimData.userId,
       nodeName: "Claim Started",
       nodeDetails:
         "Your claim has been started by an Audiologist on " +
@@ -219,7 +239,7 @@ router.post("/createClaim", (req, res, next) => {
       eta: 1
     },
     {
-      userId: data.userId,
+      userId: claimData.userId,
       nodeName: "Information Gathering",
       nodeDetails:
         "Information from all parties is currently being gathered, just as you have to fill out your required info, so must your employer and audiologist.",
@@ -229,7 +249,7 @@ router.post("/createClaim", (req, res, next) => {
       eta: 14
     },
     {
-      userId: data.userId,
+      userId: claimData.userId,
       nodeName: "Under Review",
       nodeDetails:
         "All information required to make a decision on your claim has been recieved.",
@@ -239,7 +259,7 @@ router.post("/createClaim", (req, res, next) => {
       eta: 3
     },
     {
-      userId: data.userId,
+      userId: claimData.userId,
       nodeName: "Decision",
       nodeDetails: "A decision on your claim will be made.",
       nodeState: 0,
@@ -265,7 +285,8 @@ router.post("/createClaim", (req, res, next) => {
           appData.error = 1;
           appData["data"] = "Error Occured!";
         } else {
-          res.locals.data.user_id = rows.insertId;
+          appData.error = 0;
+          appData["data"] = "Successfully created NodeArray!";
         }
       }
     );

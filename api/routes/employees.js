@@ -39,13 +39,40 @@ router.patch("/updateInfo", (req, res, next) => {
         console.log(err);
         res.status(400).json(appData);
       } else {
-        console.log(rows);
         appData.error = 0;
         appData["data"] = "Successfully updated user information!";
         res.status(201).json(appData);
       }
     }
   );
+});
+
+router.post("/workHistory", (req, res, next) => {
+  let appData = {};
+  const history = {
+    userId: req.body.userId,
+    job: req.body.job,
+    tasks: req.body.tasks,
+    startDate: req.body.startDate,
+    endDate: req.body.endDate,
+    companyId: req.body.companyId
+  };
+  database.query("INSERT INTO WorkHistory SET ?", [history], function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      appData.error = 0;
+      appData["data"] = "Successfully created Work History entry!";
+      res.status(200).json(appData);
+    }
+  });
 });
 
 module.exports = router;
