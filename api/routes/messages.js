@@ -60,8 +60,30 @@ router.get("/countUnread/:fromId", (req, res, next) => {
     fromId: req.params.fromId
   };
   database.query(
-    "SELECT COUNT(DISTINCT fromID) as unRead FROM Message WHERE toId = ? AND unRead = ?",
+    "SELECT fromId, toId, COUNT(DISTINCT fromID) as unRead FROM Message WHERE toId = ? AND unRead = ?",
     [message.fromId, 0],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows[0]);
+      }
+    }
+  );
+});
+
+router.get("/countUnreadMessages/:fromId/:toId", (req, res, next) => {
+  let appData = {};
+  const message = {
+    fromId: req.params.fromId,
+    toId: req.params.toId
+  };
+  database.query(
+    "SELECT fromId, toId, COUNT(*) as unRead FROM Message WHERE toId = ? AND fromId = ? AND unRead = ?",
+    [message.fromId, message.toId, 0],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -81,8 +103,8 @@ router.get("/contacts/:fromId", (req, res, next) => {
     fromId: req.params.fromId
   };
   database.query(
-    "SELECT doctorId, adjudicatorId FROM Claim WHERE userId = ?",
-    [message.fromId],
+    "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT adjudicatorId FROM Claim WHERE userId = ?) OR id = (SELECT doctorId FROM Claim WHERE userId = ?)",
+    [message.fromId, message.fromId],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -90,7 +112,7 @@ router.get("/contacts/:fromId", (req, res, next) => {
         console.log(err);
         res.status(400).json(appData);
       } else {
-        res.status(200).json(rows[0]);
+        res.status(200).json(rows);
       }
     }
   );
