@@ -75,6 +75,27 @@ router.get("/countUnread/:fromId", (req, res, next) => {
   );
 });
 
+router.get("/contacts/:fromId", (req, res, next) => {
+  let appData = {};
+  const message = {
+    fromId: req.params.fromId
+  };
+  database.query(
+    "SELECT doctorId, adjudicatorId FROM Claim WHERE userId = ?",
+    [message.fromId],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows[0]);
+      }
+    }
+  );
+});
+
 router.get("/:fromId/:toId", (req, res, next) => {
   const today = new Date();
   let appData = {};
