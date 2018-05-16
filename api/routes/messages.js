@@ -126,8 +126,8 @@ router.get("/:fromId/:toId", (req, res, next) => {
     toId: req.params.toId
   };
   database.query(
-    "SELECT * FROM Message WHERE fromId = ? AND toId = ?",
-    [message.fromId, message.toId],
+    "SELECT * FROM Message WHERE (fromId = ? AND toId = ?) OR (fromId = ? AND toID = ?)",
+    [message.fromId, message.toId, message.toId, message.fromId],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -135,7 +135,7 @@ router.get("/:fromId/:toId", (req, res, next) => {
         console.log(err);
         res.status(400).json(appData);
       } else {
-        res.status(201).json(rows);
+        res.status(200).json(rows);
       }
     }
   );
