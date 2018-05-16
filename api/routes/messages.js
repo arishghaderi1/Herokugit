@@ -37,8 +37,8 @@ router.patch("/", (req, res, next) => {
     toId: req.body.toId
   };
   database.query(
-    "UPDATE Message SET unRead = ? WHERE fromId = ? AND toId = ?",
-    [1, message.fromId, message.toId],
+    "UPDATE Message SET unRead = ? WHERE (fromId = ? AND toId = ?) OR (fromId = ? AND toId = ?)",
+    [1, message.fromId, message.toId, message.toId, message.fromId],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -97,25 +97,73 @@ router.get("/countUnreadMessages/:fromId/:toId", (req, res, next) => {
   );
 });
 
-router.get("/contacts/:fromId", (req, res, next) => {
+router.get("/contacts/:view/:fromId", (req, res, next) => {
   let appData = {};
   const message = {
+    view: req.params.view,
     fromId: req.params.fromId
   };
-  database.query(
-    "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT adjudicatorId FROM Claim WHERE userId = ?) OR id = (SELECT doctorId FROM Claim WHERE userId = ?)",
-    [message.fromId, message.fromId],
-    function(err, rows, fields) {
-      if (err) {
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        console.log(err);
-        res.status(400).json(appData);
-      } else {
-        res.status(200).json(rows);
+  if (message.view === "employee") {
+    database.query(
+      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT adjudicatorId FROM Claim WHERE userId = ?) OR id = (SELECT doctorId FROM Claim WHERE userId = ?)",
+      [message.fromId, message.fromId],
+      function(err, rows, fields) {
+        if (err) {
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+          console.log(err);
+          res.status(400).json(appData);
+        } else {
+          res.status(200).json(rows);
+        }
       }
-    }
-  );
+    );
+  } else if (message.view === "employer") {
+    database.query(
+      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT adjudicatorId FROM Claim WHERE id = ?)",
+      [message.fromId],
+      function(err, rows, fields) {
+        if (err) {
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+          console.log(err);
+          res.status(400).json(appData);
+        } else {
+          res.status(200).json(rows);
+        }
+      }
+    );
+  } else if (message.view === "wsib") {
+    database.query(
+      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT userId FROM Claim WHERE id = ?) OR id = (SELECT doctorId FROM Claim WHERE id = ?)",
+      [message.fromId, message.fromId],
+      function(err, rows, fields) {
+        if (err) {
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+          console.log(err);
+          res.status(400).json(appData);
+        } else {
+          res.status(200).json(rows);
+        }
+      }
+    );
+  } else if (message.view === "doctor") {
+    database.query(
+      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT adjudicatorId FROM Claim WHERE id = ?) OR id = (SELECT userId FROM Claim WHERE id = ?)",
+      [message.fromId, message.fromId],
+      function(err, rows, fields) {
+        if (err) {
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+          console.log(err);
+          res.status(400).json(appData);
+        } else {
+          res.status(200).json(rows);
+        }
+      }
+    );
+  }
 });
 
 router.get("/:fromId/:toId", (req, res, next) => {
