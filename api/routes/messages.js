@@ -37,8 +37,8 @@ router.patch("/", (req, res, next) => {
     toId: req.body.toId
   };
   database.query(
-    "UPDATE Message SET unRead = ? WHERE (fromId = ? AND toId = ?) OR (fromId = ? AND toId = ?)",
-    [1, message.fromId, message.toId, message.toId, message.fromId],
+    "UPDATE Message SET unRead = ? WHERE fromId = ? AND toId = ?",
+    [1, message.toId, message.fromId],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
