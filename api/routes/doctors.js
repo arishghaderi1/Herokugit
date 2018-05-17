@@ -62,19 +62,22 @@ router.get("/audiograms/:claimId", (req, res, next) => {
 router.post("/updateAudiogram", (req, res, next) => {
   let appData = {};
   let data = {
-    doctorId: req.body.currentUserId,
+    doctorId: req.body.doctorId,
+    userId: req.body.userId,
     claimId: req.body.claimId,
     audioId: req.body.audiogramId || false,
     audiogram: req.body.data,
     comments: req.body.comments
   };
-  if (audioId) {
+  const today = new Date();
+  if (data.audioId !== false) {
     database.query(
-      "UPDATE Audiogram SET data = ?, comments = ? WHERE id = ?",
-      [data.audiogram, data.comments, data.audioId],
+      "UPDATE Audiogram SET data = ?, comments = ?, updatedAt = ? WHERE id = ?",
+      [data.audiogram, data.comments, today, data.audioId],
       function(err, rows, fields) {
         if (err) {
-          console.log("Error in sql");
+          console.log("Error in udpate sql");
+          console.log(err);
         } else {
           appData["error"] = 0;
           appData["data"] = "Updated audiogram";
@@ -84,11 +87,19 @@ router.post("/updateAudiogram", (req, res, next) => {
     );
   } else {
     database.query(
-      "INSERT INTO Audiogram (claimId,doctorId,data,comments) VALUES (?,?,?,?)",
-      [data.claimId, data.doctorId, data.audiogram, data.comments],
+      "INSERT INTO Audiogram (claimId,userId,doctorId,data,comments,createdAt) VALUES (?,?,?,?,?,?)",
+      [
+        data.claimId,
+        data.userId,
+        data.doctorId,
+        data.audiogram,
+        data.comments,
+        today
+      ],
       function(err, rows, fields) {
         if (err) {
-          console.log("Error in sql");
+          console.log("Error in insert sql");
+          console.log(err);
         } else {
           appData["error"] = 0;
           appData["data"] = "New Audiogram created.";
