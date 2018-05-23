@@ -11,6 +11,7 @@ const claimRoutes = require("./api/routes/claims");
 const employerRoutes = require("./api/routes/employers");
 const doctorRoutes = require("./api/routes/doctors");
 const employeeRoutes = require("./api/routes/employees");
+const wsibRoutes = require("./api/routes/wsibs");
 const notificationRoutes = require("./api/routes/notifications");
 const messageRoutes = require("./api/routes/messages");
 
@@ -66,6 +67,7 @@ app.use("/claims", claimRoutes);
 app.use("/employers", employerRoutes);
 app.use("/doctors", doctorRoutes);
 app.use("/employees", employeeRoutes);
+app.use("/wsibs", wsibRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
 
