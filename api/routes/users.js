@@ -36,6 +36,55 @@ const saltHashPassword = function(userpassword, userSalt = null) {
 process.env.SECRET_KEY = "wsib_potatoes";
 
 // Register a new user
+router.post("/demoRegister/:id", function(req, res) {
+  const today = new Date();
+  let appData = {
+    error: 1,
+    data: ""
+  };
+
+  let password = req.body.password;
+
+  const result = saltHashPassword(password);
+
+  let companyId;
+  if (req.body.view === "employee") {
+    companyId = 1;
+  } else if (req.body.view === "employer") {
+    companyId = 4;
+  } else if (req.body.view === "wsib") {
+    companyId = 2;
+  } else {
+    companyId = 3;
+  }
+
+  const userData = {
+    name: req.body.name,
+    email: req.body.email,
+    password: result.hashed,
+    salt: result.salt,
+    view: req.body.view,
+    companyId: companyId,
+    created_at: today
+  };
+
+  database.query(
+    "UPDATE User SET ? WHERE id=?",
+    [userData, req.params.id],
+    function(err, rows, fields) {
+      if (!err) {
+        appData.error = 0;
+        appData["data"] = "User registered successfully!";
+        res.status(201).json(appData);
+      } else {
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    }
+  );
+});
+
+// Register a new user
 router.post("/register", function(req, res) {
   const today = new Date();
   let appData = {
