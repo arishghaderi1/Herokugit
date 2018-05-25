@@ -26,22 +26,27 @@ router.post("/", (req, res, next) => {
 
 router.post("/create", (req, res, next) => {
   let appData = {};
+  const today = new Date();
   const data = {
-    userId: req.body.userId
+    userId: req.body.userId,
+    adjudicatorId: req.body.adjudicatorId || null,
+    doctorId: req.body.doctorId || null,
+    status: req.body.status,
+    injuryType: req.body.injuryType,
+    notes: req.body.notes || null,
+    created_at: today,
+    updated_at: today
   };
-  database.query(
-    "INSERT INTO claims (user_id) VALUES(?)",
-    [data.userId],
-    function(err, rows, fields) {
-      if (err) {
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        res.status(400).json(appData);
-      } else {
-        res.status(200).json(rows);
-      }
+  database.query("INSERT INTO Claim SET ?", data, function(err, rows, fields) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
+    } else {
+      res.status(200).json(rows);
     }
-  );
+  });
 });
 
 // Get Claim with certain ID
