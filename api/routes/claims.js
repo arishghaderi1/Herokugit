@@ -10,7 +10,7 @@ router.post("/", (req, res, next) => {
   let notWithIds = req.body.excludeIds.length !== 0 ? req.body.excludeIds : "";
 
   database.query(
-    "SELECT * FROM claims WHERE id NOT IN (?) AND status NOT IN (?) ORDER by created_at DESC LIMIT 15",
+    "SELECT * FROM Claim WHERE id NOT IN (?) AND status NOT IN (?) ORDER by createdAt DESC LIMIT 15",
     [notWithIds, notWithStatus],
     function(err, rows, fields) {
       if (err) {
@@ -53,7 +53,7 @@ router.post("/create", (req, res, next) => {
 router.get("/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
-  database.query("SELECT * FROM claims WHERE id = ?", id, function(
+  database.query("SELECT * FROM Claim WHERE id = ?", id, function(
     err,
     rows,
     fields
