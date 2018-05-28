@@ -16,6 +16,14 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
     else if (order === "Inactive"){
     sortBy = ""
     stats = " AND Claim.status = 'Inactive'"  }
+
+    else if (order === "Active"){
+      sortBy = ""
+      stats = " AND Claim.status = 'Active'"  }
+    
+    else if (order === "Pending"){
+        sortBy = ""
+        stats = " AND Claim.status = 'Pending Reply'"  }
   
   
   
