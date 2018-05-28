@@ -135,8 +135,8 @@ router.get("/contacts/:view/:fromId", (req, res, next) => {
     );
   } else if (message.view === "wsib") {
     database.query(
-      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT userId FROM Claim WHERE id = ?) OR id = (SELECT doctorId FROM Claim WHERE id = ?)",
-      [message.fromId, message.fromId],
+      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT userId FROM Claim WHERE id = ?) OR id = (SELECT doctorId FROM Claim WHERE id = ?) OR id = (SELECT User.id FROM User, Claim WHERE User.companyId = Claim.companyId AND User.view = 'employer' AND Claim.id = ? LIMIT 1)",
+      [message.fromId, message.fromId, message.fromId],
       function(err, rows, fields) {
         if (err) {
           appData.error = 1;
