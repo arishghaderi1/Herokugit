@@ -25,7 +25,7 @@ router.get("/patientInfo/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
   database.query(
-    "SELECT MedicalInfo.*, Claim.id as claimId FROM MedicalInfo, Claim WHERE Claim.userId = MedicalInfo.userId AND Claim.id = ?",
+    "SELECT User.email, User.phone, User.birthdate, User.gender, Claim.id as claimId, Claim.injuryType User FROM User, Claim WHERE Claim.userId = User.id AND Claim.id = ?",
     [id],
     function(err, rows, fields) {
       if (err) {
