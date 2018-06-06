@@ -12,7 +12,7 @@ router.get("/:userId", (req, res, next) => {
       res.status(500).json(appData);
     } else {
       connection.query(
-        "SELECT * FROM Notification WHERE userId = ?",
+        "SELECT * FROM Notification WHERE userId = ? ORDER BY createdAt DESC",
         [id],
         function(err, rows, fields) {
           if (err) {
