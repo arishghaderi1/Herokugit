@@ -305,7 +305,7 @@ router.post("/updateUserInfo", (req, res, next) => {
       if (!err) {
         appData.error = 0;
         appData["data"] = "User info updated!";
-        res.status(200).json(appData);
+        res.status(201).json(appData);
       } else {
         appData["data"] = "Error Occured!";
         res.status(400).json(appData);
