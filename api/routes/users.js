@@ -292,6 +292,28 @@ router.post("/changePassword", (req, res, next) => {
   );
 });
 
+router.post("/updateUserInfo", (req, res, next) => {
+  let appData = {
+    error: 1,
+    data: ""
+  };
+
+  database.query(
+    "UPDATE User SET ? WHERE id=?",
+    [req.body, req.body.id],
+    function(err, rows, fields) {
+      if (!err) {
+        appData.error = 0;
+        appData["data"] = "User info updated!";
+        res.status(200).json(appData);
+      } else {
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    }
+  );
+});
+
 router.delete("/:userId", (req, res, next) => {
   res.status(200).json({
     message: "Deleted product"
