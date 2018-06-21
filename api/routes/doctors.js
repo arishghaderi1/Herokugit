@@ -128,12 +128,12 @@ router.post("/updateAudiogram", (req, res, next) => {
   }
 });
 
-router.get("/findPatient/:email", (req, res, next) => {
+router.get("/findPatient/:searchValue", (req, res, next) => {
   let appData = {};
-  const email = req.params.email;
+  const searchValue = req.params.searchValue;
   database.query(
-    "SELECT User.name FROM User WHERE email LIKE CONCAT('%', ? ,'%') LIMIT 5",
-    [email],
+    "SELECT User.id, claimId FROM User INNER JOIN (SELECT id as claimId, userId FROM Claim) Claim ON User.id = Claim.userId WHERE healthCardNum = ? OR claimId = ? LIMIT 1",
+    [searchValue, searchValue],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
