@@ -227,6 +227,21 @@ router.get("/getUsers", function(req, res) {
   });
 });
 
+router.get("/getUser/:userId", function(req, res) {
+  const token = req.body.token || req.headers["token"];
+  let appData = {};
+  database.query("SELECT * FROM User Where id = ?", req.params.userId, function(err, rows, fields) {
+    if (!err) {
+      appData["error"] = 0;
+      appData["data"] = rows;
+      res.status(200).json(appData);
+    } else {
+      appData["data"] = "No data found";
+      res.status(404).json(appData);
+    }
+  });
+});
+
 router.get("/login", function(req, res, next) {
   let appData = {};
   const token = req.body.token || req.headers["token"];
@@ -307,7 +322,7 @@ router.post("/updateUserInfo", (req, res, next) => {
         appData["data"] = "User info updated!";
         res.status(201).json(appData);
       } else {
-        appData["data"] = "Error Occured!";
+        appData["data"] = "Error Occured";
         res.status(400).json(appData);
       }
     }
