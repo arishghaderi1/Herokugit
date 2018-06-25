@@ -6,7 +6,7 @@ router.get("/claims/:currentUserId", (req, res, next) => {
   let appData = {};
   const id = req.params.currentUserId;
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId =  ?",
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId =  ?",
     [id],
     function(err, rows, fields) {
       if (err) {
