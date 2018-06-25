@@ -6,13 +6,12 @@ router.get("/claims/:currentUserId", (req, res, next) => {
   let appData = {};
   const id = req.params.currentUserId;
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.* FROM User, Claim WHERE User.id = Claim.userId AND Claim.doctorId = ?",
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId =  ?",
     [id],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
         appData["data"] = "Error Occured!";
-        console.log(err);
         res.status(400).json(appData);
       } else {
         res.status(200).json(rows);
@@ -57,6 +56,25 @@ router.get("/audiograms/:claimId", (req, res, next) => {
       res.status(200).json(rows);
     }
   });
+});
+
+router.get("/serviceHistory/:userId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.userId;
+  database.query(
+    "SELECT * FROM ServiceHistory WHERE userId = ?",
+    [id],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
+    }
+  );
 });
 
 router.post("/updateAudiogram", (req, res, next) => {
@@ -110,12 +128,12 @@ router.post("/updateAudiogram", (req, res, next) => {
   }
 });
 
-router.get("/findPatient/:email", (req, res, next) => {
+router.get("/findPatient/:searchValue", (req, res, next) => {
   let appData = {};
-  const email = req.params.email;
+  const searchValue = req.params.searchValue;
   database.query(
-    "SELECT User.name FROM User WHERE email LIKE CONCAT('%', ? ,'%') LIMIT 5",
-    [email],
+    "SELECT User.id, claimId FROM User INNER JOIN (SELECT id as claimId, userId FROM Claim) Claim ON User.id = Claim.userId WHERE healthCardNum = ? OR claimId = ? LIMIT 1",
+    [searchValue, searchValue],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
