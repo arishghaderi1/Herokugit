@@ -5,11 +5,32 @@ const database = require("../db.js");
 router.get("/claims/:currentUserId", (req, res, next) => {
   let appData = {};
   const id = req.params.currentUserId;
+
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId =  ?",
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId = ?",
     [id],
     function(err, rows, fields) {
       if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
+    }
+  );
+});
+
+router.post("/claims/:currentUserId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.currentUserId;
+  const list = req.body.currentList.length > 0 ? req.body.currentList : 0;
+  database.query(
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId = ? AND Claim.id NOT IN (?) LIMIT 20",
+    [id, list],
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
         appData.error = 1;
         appData["data"] = "Error Occured!";
         res.status(400).json(appData);
