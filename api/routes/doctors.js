@@ -98,6 +98,20 @@ router.get("/serviceHistory/:userId", (req, res, next) => {
   );
 });
 
+router.get("/grid", (req, res, next) => {
+  let appData = {};
+  database.query("SELECT * FROM ServiceGrid", function(err, rows, fields) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.status(200).json(rows);
+    }
+  });
+});
+
 router.post("/updateAudiogram", (req, res, next) => {
   let appData = {};
   let data = {
