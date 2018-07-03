@@ -150,7 +150,7 @@ router.get("/contacts/:view/:fromId", (req, res, next) => {
     );
   } else if (message.view === "doctor") {
     database.query(
-      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT adjudicatorId FROM Claim WHERE id = ?) OR id = (SELECT userId FROM Claim WHERE id = ?)",
+      "SELECT User.name, User.id, User.view FROM User WHERE id = (SELECT adjudicatorId FROM Claim WHERE id = ?)",
       [message.fromId, message.fromId],
       function(err, rows, fields) {
         if (err) {
