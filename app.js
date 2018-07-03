@@ -14,6 +14,7 @@ const employeeRoutes = require("./api/routes/employees");
 const wsibRoutes = require("./api/routes/wsibs");
 const notificationRoutes = require("./api/routes/notifications");
 const messageRoutes = require("./api/routes/messages");
+const settingRoutes = require("./api/routes/settings");
 
 app.use(cors());
 
@@ -70,6 +71,7 @@ app.use("/employees", employeeRoutes);
 app.use("/wsibs", wsibRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
+app.use("/settings", settingRoutes);
 
 // Error handling
 app.use((req, res, next) => {
