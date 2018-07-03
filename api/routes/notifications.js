@@ -23,4 +23,24 @@ router.get("/:userId", function(req, res) {
     );
 });
 
+router.get("/update/:notifId", function(req, res) {
+  let appData = {};
+  const id = req.params.notifId;
+  database.query(
+      "UPDATE Notification SET isRead = 1 WHERE id = 9",
+      [id],
+      function(err, rows, fields) {
+        if (!err) {
+          appData.error = 0;
+          appData["data"] = "Notification Updated Correctly!";
+          res.status(201).json(appData);
+        } else {
+          appData["data"] = "Error Occured!";
+          appData["error"] = err
+          res.status(400).json(appData);
+        }
+      }
+    );
+});
+
 module.exports = router;
