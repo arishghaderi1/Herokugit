@@ -7,7 +7,7 @@ router.get("/claims/:currentUserId", (req, res, next) => {
   const id = req.params.currentUserId;
 
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId = ?",
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.userId WHERE Claim.doctorId = ?",
     [id],
     function(err, rows, fields) {
       if (err) {
@@ -26,7 +26,7 @@ router.post("/claims/:currentUserId", (req, res, next) => {
   const id = req.params.currentUserId;
   const list = req.body.currentList.length > 0 ? req.body.currentList : 0;
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.userId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.userId = ServiceHistory.userId WHERE Claim.doctorId = ? AND Claim.id NOT IN (?) LIMIT 20",
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.userId WHERE Claim.doctorId = ? AND Claim.id NOT IN (?) LIMIT 20",
     [id, list],
     function(err, rows, fields) {
       if (err) {
@@ -45,7 +45,7 @@ router.get("/patientInfo/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
   database.query(
-    "SELECT User.email, User.phone, User.birthdate, User.gender, Claim.id as claimId, Claim.injuryType User FROM User, Claim WHERE Claim.userId = User.id AND Claim.id = ?",
+    "SELECT User.email, User.phone, User.birthdate, User.gender, Claim.id as claimId, Claim.injuryType User FROM User, Claim WHERE Claim.employeeId = User.id AND Claim.id = ?",
     [id],
     function(err, rows, fields) {
       if (err) {
@@ -167,7 +167,7 @@ router.get("/findPatient/:searchValue", (req, res, next) => {
   let appData = {};
   const searchValue = req.params.searchValue;
   database.query(
-    "SELECT User.id, claimId FROM User INNER JOIN (SELECT id as claimId, userId FROM Claim) Claim ON User.id = Claim.userId WHERE healthCardNum = ? OR claimId = ? LIMIT 1",
+    "SELECT User.id, claimId FROM User INNER JOIN (SELECT id as claimId, employeeId FROM Claim) Claim ON User.id = Claim.userId WHERE healthCardNum = ? OR claimId = ? LIMIT 1",
     [searchValue, searchValue],
     function(err, rows, fields) {
       if (err) {
@@ -240,7 +240,7 @@ router.post("/createClaim", (req, res, next) => {
   const claimData = res.locals.claimData;
   const date = new Date();
   database.query(
-    "INSERT INTO Claim (userId, doctorId, companyId, created_at, status, injuryType, notes) VALUES(?,?,?,?,'started',?,?)",
+    "INSERT INTO Claim (employeeId, doctorId, companyId, created_at, status, injuryType, notes) VALUES(?,?,?,?,'started',?,?)",
     [
       claimData.userId,
       claimData.doctorId,
