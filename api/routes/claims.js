@@ -23,7 +23,7 @@ router.post("/", (req, res, next) => {
     }
   );
 });
-
+//Create a claim
 router.post("/create", (req, res, next) => {
   let appData = {};
   const today = new Date();
@@ -45,6 +45,41 @@ router.post("/create", (req, res, next) => {
       res.status(400).json(appData);
     } else {
       res.status(200).json(rows);
+    }
+  });
+});
+
+//Edit/Update NodeArray
+//Create a claim
+router.patch("/nodeArray", (req, res, next) => {
+  let appData = {};
+  const today = new Date();
+  const nodeId = req.body.nodeId;
+  const data = {
+    userId: req.body.userId,
+    nodeName: req.body.nodeName,
+    nodeDetails: req.body.nodeDetails,
+    nodeState: req.body.nodeState,
+    nextSteps: req.body.nextSteps,
+    notes: req.body.notes,
+    eta: req.body.eta,
+    dateCompleted: null,
+    updated_at: date
+  };
+  database.query("UPDATE NodeArray SET ? WHERE id=?", [data, nodeId], function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
+    } else {
+      appData.error = 0;
+      appData["data"] = "Updated NodeArray!";
+      res.status(201).json(appData);
     }
   });
 });
