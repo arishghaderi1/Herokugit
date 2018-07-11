@@ -15,7 +15,7 @@ router.get("/nodeArray/:userId", (req, res, next) => {
         console.log(err);
         res.status(400).json(appData);
       } else {
-        res.status(200).json(rows);
+        res.status(200).json(rows[0]);
       }
     }
   );
