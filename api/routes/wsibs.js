@@ -8,28 +8,27 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
   const order = req.params.order;
   let sortBy = "";
   let stats = "progress";
-  
-  if(order === "recent"){
-    sortBy = "ORDER BY updated_At DESC" //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
-    stats = ""}
-  
-    else if (order === "Inactive"){
-    sortBy = ""
-    stats = " AND Claim.status = 'Inactive'"  }
 
-    else if (order === "Active"){
-      sortBy = ""
-      stats = " AND Claim.status = 'Active'"  }
-    
-    else if (order === "Pending"){
-        sortBy = ""
-        stats = " AND Claim.status = 'Pending Reply'"  }
-  
-  
-  
+  if (order === "recent") {
+    sortBy = "ORDER BY updated_At DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
+    stats = "";
+  } else if (order === "Inactive") {
+    sortBy = "";
+    stats = " AND Claim.status = 'Inactive'";
+  } else if (order === "Active") {
+    sortBy = "";
+    stats = " AND Claim.status = 'Active'";
+  } else if (order === "Pending") {
+    sortBy = "";
+    stats = " AND Claim.status = 'Pending Reply'";
+  }
+
   // Query the database based on Sort parameter
   database.query(
-    "SELECT User.name, User.id, Claim.* FROM User, Claim WHERE  User.id = Claim.userId" + stats + " AND Claim.adjudicatorId = ?" + sortBy,
+    "SELECT User.name, User.id, Claim.* FROM User, Claim WHERE  User.id = Claim.employeeId" +
+      stats +
+      " AND Claim.adjudicatorId = ?" +
+      sortBy,
     id,
     function(err, rows, fields) {
       if (err) {
