@@ -99,7 +99,7 @@ router.get("/:userId", function(req, res) {
 router.get("/getForms/:userId", function(req, res) {
   let appData = {};
   const id = req.params.userId;
-  database.query("SELECT * FROM Forms WHERE userId = ?", [id], function(
+  database.query("SELECT * FROM Form WHERE userId = ?", [id], function(
     err,
     rows,
     fields
