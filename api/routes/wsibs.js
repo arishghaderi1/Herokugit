@@ -63,7 +63,7 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
           if(rows.length > 0) {
             console.log("FORMS RESULT: ");
           console.log(rows);
-            merger[index].concat(rows);
+            Object.assign(merger[index], rows);
           }
         }
       }
