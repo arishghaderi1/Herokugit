@@ -25,7 +25,7 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
 
   // Query the database based on Sort parameter
   database.query(
-    "SELECT User.name, User.id, Claim.* FROM User, Claim WHERE  User.id = Claim.employeeId" +
+    "SELECT User.name, Claim.* FROM User, Claim WHERE  User.id = Claim.employeeId" +
       stats +
       " AND Claim.adjudicatorId = ?" +
       sortBy,

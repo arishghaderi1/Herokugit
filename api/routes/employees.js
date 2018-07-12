@@ -117,4 +117,213 @@ router.get("/getForms/:userId", function(req, res) {
   });
 });
 
+/* 
+***************************
+START OF CREATE CLAIM CALLS 
+***************************
+*/
+
+/*
+  Create a claim and return insertId
+*/
+router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  let claimData = {
+    employeeId: req.body.employeeId,
+    doctorId: req.body.doctorId,
+    companyId: req.body.companyId,
+    adjudicatorId: 3,
+    actionRequired: req.body.actionRequired,
+    createdAt: new Date(),
+    injuryType: req.body.injury,
+    notes: req.body.notes || ""
+  };
+  database.query("INSERT INTO Claim SET ? ", claimData, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log("Creating Claim Error: ");
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
+    } else {
+      res.locals.claimId = rows[0].insertId;
+      res.locals.employeeId = claimData.employeeId;
+      res.locals.companyId = claimData.employerId;
+      res.locals.doctorId = claimData.doctorId;
+      res.locals.adjudicatorId = claimData.adjudicatorId;
+      next();
+    }
+  });
+});
+
+/*
+  Create Form and return insertId
+*/
+router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  const formData = {
+    name: req.body.name,
+    code: req.body.code,
+    personal: req.body.personal,
+    formSpecific: req.body.formSpecific,
+    workHistory: req.body.workHistory,
+    consent: req.body.consent
+  };
+  database.query("INSERT INTO Form SET ?", formData, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log("Creating Form Error: ");
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
+    } else {
+      res.locals.formId = rows[0].insertId;
+      next();
+    }
+  });
+});
+
+/*
+  Reference Form in Document
+*/
+router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  const claimId = res.locals.claimId;
+  const formId = res.locals.formId;
+  const userId = res.locals.employeeId;
+  const type = req.body.type;
+  const date = new Date();
+  if (type === "form") {
+    database.query(
+      "INSERT INTO Document (claimId, userId, type, data, createdAt) VALUES(?, ?, ?, ?, ?)",
+      [claimId, userId, type, formId, date],
+      function(err, rows, fields) {
+        if (err) {
+          console.log("Creating Document Error: ");
+          console.log(err);
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+          res.status(400).json(appData);
+        } else {
+          res.locals.documentId = rows[0].insertId;
+          next();
+        }
+      }
+    );
+  } else {
+    next();
+  }
+});
+
+/*
+  Reference Doc in Claim
+*/
+router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  const claimId = res.locals.claimId;
+  const formId = res.locals.formId;
+  const userId = res.locals.employeeId;
+  const type = req.body.type;
+  const date = new Date();
+  if (type === "form") {
+    database.query(
+      "INSERT INTO Document (claimId, userId, type, data, createdAt) VALUES(?, ?, ?, ?, ?)",
+      [claimId, userId, type, formId, date],
+      function(err, rows, fields) {
+        if (err) {
+          console.log("Creating Document Error: ");
+          console.log(err);
+          appData.error = 1;
+          appData["data"] = "Error Occured!";
+          res.status(400).json(appData);
+        } else {
+          res.locals.documentId = rows[0].insertId;
+          next();
+        }
+      }
+    );
+  } else {
+    next();
+  }
+});
+
+/**
+ * Create NodeArray for user
+ */
+router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  const employeeId = res.locals.employeeId;
+  const claimId = res.locals.claimId;
+  const date = new Date();
+  const nodeArray = [
+    {
+      name: "Claim Started",
+      details: "Your claim has been started.",
+      state: 1,
+      nextSteps:
+        "Please see your forms section and ensure you have filled out all of the required information, other parties will also need to fill out their required forms.",
+      startDate: date,
+      endDate: "00-00-00 00:00:00"
+    },
+    {
+      name: "Information Gathering",
+      details:
+        "Information from all parties is currently being gathered, just as you have to fill out your required info, so must your employer and audiologist.",
+      state: null,
+      nextSteps:
+        "Once all information from all parties has been received the claim will be reveiwed by an adjudicator who will make a decision.",
+      startDate: "00-00-00 00:00:00",
+      endDate: "00-00-00 00:00:00"
+    },
+    {
+      name: "Under Review",
+      details:
+        "All information required to make a decision on your claim has been recieved.",
+      state: 0,
+      nextSteps:
+        "You will receive a notification when the adjudicator has made a decision on your claim, this can take up to 3 days.",
+      startDate: "00-00-00 00:00:00",
+      endDate: "00-00-00 00:00:00"
+    },
+    {
+      name: "Decision",
+      details: "A decision on your claim will be made.",
+      state: 0,
+      nextSteps:
+        "You should now be able to view your benefits in the documents section of your portal. Please review the decision.",
+      startDate: "00-00-00 00:00:00",
+      endDate: "00-00-00 00:00:00"
+    }
+  ];
+
+  database.query(
+    "INSERT INTO NodeArray (employeeId, claimId, Step1, Step2, Step3, Step4) VALUES(?,?,?,?,?,?)",
+    [
+      employeeId,
+      claimId,
+      JSON.stringify(nodeArray[0]),
+      JSON.stringify(nodeArray[1]),
+      JSON.stringify(nodeArray[2]),
+      JSON.stringify(nodeArray[3])
+    ],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+      } else {
+        appData.error = 0;
+        appData["data"] = "Successfully created NodeArray!";
+      }
+    }
+  );
+});
+
 module.exports = router;
