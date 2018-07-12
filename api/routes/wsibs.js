@@ -37,40 +37,29 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
         appData["data"] = err;
         res.status(400).json(appData);
       } else {
-        res.locals.claims = rows;
-        next();
+        res.status(200).json(rows);
       }
     }
   );
 });
 
-router.get("/claims/:wsibId/:order", (req, res, next) => {
+router.get("/documents/:claimId", (req, res, next) => {
   let appData = {};
-  const claims = res.locals.claims;
-  let merger = claims;
-  claims.map((claim, index) => {
-    database.query(
-      "SELECT Document.*, Form.* FROM Document INNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ?",
-      claim.id,
-      function(err, rows, fields) {
-        if (err) {
-          console.log(err);
-          appData.error = 1;
-          appData["data"] = err;
-          res.status(400).json(appData);
-        } else {
-          
-          if(rows.length > 0) {
-            console.log("FORMS RESULT: ");
-          console.log(rows);
-            Object.assign(merger[index], rows);
-          }
-        }
+  const claimId = req.params.claimId;
+  database.query(
+    "SELECT Document.*, Form.* FROM Document INNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ?",
+    claimId,
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
       }
-    );
-  });
-  res.status(200).json(merger);
-  // Query the database based on Sort parameter
+    }
+  );
 });
 
 module.exports = router;
