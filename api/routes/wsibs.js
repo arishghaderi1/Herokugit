@@ -37,10 +37,35 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
         appData["data"] = err;
         res.status(400).json(appData);
       } else {
-        res.status(200).json(rows);
+        res.locals.claims = rows;
+        next();
       }
     }
   );
+});
+
+router.get("/claims/:wsibId/:order", (req, res, next) => {
+  let appData = {};
+  const claims = res.locals.claims;
+  let merger = claims;
+  claims.map((claim, index) => {
+    database.query(
+      "SELECT Document.*. Form.* FROM Document INNNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ?",
+      claim.id,
+      function(err, rows, fields) {
+        if (err) {
+          console.log(err);
+          appData.error = 1;
+          appData["data"] = err;
+          res.status(400).json(appData);
+        } else {
+          Object.assign(merger[index], rows);
+        }
+      }
+    );
+  });
+  res.status(200).json(merger);
+  // Query the database based on Sort parameter
 });
 
 module.exports = router;

@@ -153,7 +153,7 @@ router.post("/createClaim", (req, res, next) => {
     } else {
       res.locals.claimId = rows.insertId;
       res.locals.employeeId = claimData.employeeId;
-      res.locals.companyId = claimData.employerId;
+      res.locals.companyId = claimData.companyId;
       res.locals.doctorId = claimData.doctorId;
       res.locals.adjudicatorId = claimData.adjudicatorId;
       next();
@@ -250,6 +250,87 @@ router.post("/createClaim", (req, res, next) => {
       }
     }
   );
+});
+
+/*
+  Get primaryContactId
+*/
+router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  const companyId = res.locals.companyId;
+  database.query(
+    "SELECT contactId FROM Company WHERE id = ?",
+    companyId,
+    function(err, rows, fields) {
+      if (err) {
+        console.log("Getting contactId Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
+        res.locals.contactId = rows[0].contactId;
+        next();
+      }
+    }
+  );
+});
+
+/*
+  Send notifications to everybody
+*/
+router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  const data = [
+    {
+      userId: res.locals.contactId,
+      action: "Confirm Employment",
+      body: "Please confirm this workers employment.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({ tab: "DashboardTab", details: {} })
+    },
+    {
+      userId: res.locals.doctorId,
+      action: "Upload Patient Audiogram",
+      body: "Please upload any and all audiograms for this patient.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({
+        tab: "DashboardTab",
+        details: { activeClaim: res.locals.claimId }
+      })
+    },
+    {
+      userId: res.locals.adjudicatorId,
+      action: "New Claim",
+      body:
+        "You've been assigned a new claim. Watch for updates for required forms being filled out.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({
+        tab: "DashboardTab",
+        details: { activeClaim: res.locals.claimId }
+      })
+    }
+  ];
+
+  data.map(user => {
+    database.query("INSERT INTO Notification SET ?", user, function(
+      err,
+      rows,
+      fields
+    ) {
+      if (err) {
+        console.log("Creating Notifications Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    });
+  });
+  next();
 });
 
 /**
