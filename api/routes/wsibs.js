@@ -14,20 +14,20 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
     stats = "";
   } else if (order === "Inactive") {
     sortBy = "";
-    stats = " AND Claim.status = 'Inactive'";
+    stats = "WHERE Claim.status = 'Inactive'";
   } else if (order === "Active") {
     sortBy = "";
-    stats = " AND Claim.status = 'Active'";
+    stats = " WHERE Claim.status = 'Active'";
   } else if (order === "Pending") {
     sortBy = "";
-    stats = " AND Claim.status = 'Pending Reply'";
+    stats = " WHERE Claim.status = 'Pending Reply'";
   }
 
   // Query the database based on Sort parameter
   database.query(
-    "SELECT User.name, Claim.* FROM User INNNER JOIN Claim ON User.id = Claim.employeeId" +
+    "SELECT User.name, Claim.* FROM User INNER JOIN Claim ON User.id = Claim.employeeId" +
       stats +
-      " WHERE Claim.adjudicatorId = ?" +
+      " AND Claim.adjudicatorId = ?" +
       sortBy,
     id,
     function(err, rows, fields) {
