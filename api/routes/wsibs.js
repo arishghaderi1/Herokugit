@@ -10,7 +10,7 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
   let stats = "progress";
 
   if (order === "recent") {
-    sortBy = "ORDER BY updated_At DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
+    sortBy = "ORDER BY updatedAt DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
     stats = "";
   } else if (order === "Inactive") {
     sortBy = "";
