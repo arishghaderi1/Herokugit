@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db.js");
 
-router.get("/claims/:companyId", (req, res, next) => {
+router.get("/claims/:employerId", (req, res, next) => {
   let appData = {};
-  const id = req.params.companyId;
+  const id = req.params.employerId;
   database.query(
-    "SELECT User.name, User.id, Claim.* FROM User, Claim WHERE User.id = Claim.userId AND Claim.companyId = ?",
+    "SELECT Claim.*, User.firstName, User.lastName FROM Claim INNER JOIN User ON Claim.employeeId = User.id WHERE Claim.companyId = (SELECT id FROM Company WHERE Company.contactId = ?)",
     id,
     function(err, rows, fields) {
       if (err) {
@@ -20,11 +20,11 @@ router.get("/claims/:companyId", (req, res, next) => {
   );
 });
 
-router.get("/actionClaims/:companyId", (req, res, next) => {
+router.get("/actionClaims/:employerId", (req, res, next) => {
   let appData = {};
-  const id = req.params.companyId;
+  const id = req.params.employerId;
   database.query(
-    "SELECT User.name, User.id as userId, WorkHistory.* FROM User, WorkHistory WHERE User.id = WorkHistory.userId AND WorkHistory.companyId = ? AND WorkHistory.employerConfirmed = 0",
+    "SELECT User.firstName, User.lastName, WorkHistory.* FROM WorkHistory INNER JOIN User ON User.id = WorkHistory.employeeId WHERE WorkHistory.companyId = (SELECT id FROM Company WHERE Company.contactId = ?) AND WorkHistory.employerConfirmed = 0",
     id,
     function(err, rows, fields) {
       if (err) {
