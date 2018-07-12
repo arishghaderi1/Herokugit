@@ -48,7 +48,7 @@ router.get("/documents/:claimId/:userId", (req, res, next) => {
   const claimId = req.params.claimId;
   const userId = req.params.userId;
   database.query(
-    "SELECT Document.*, Form.* FROM Document INNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ? AND Form.userId = ?",
+    "SELECT Document.type, Document.createdAt, Form.* FROM Document INNER JOIN Form ON Document.data = Form.id WHERE Document.claimId = ? AND Form.userId = ?",
     [claimId, userId],
     function(err, rows, fields) {
       if (err) {
