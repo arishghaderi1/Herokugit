@@ -135,7 +135,8 @@ router.post("/createClaim", (req, res, next) => {
     adjudicatorId: 3,
     actionRequired: req.body.actionRequired,
     createdAt: new Date(),
-    injuryType: req.body.injury,
+    injuryType: req.body.injuryType,
+    status: "Active",
     notes: req.body.notes || ""
   };
   database.query("INSERT INTO Claim SET ? ", claimData, function(
@@ -150,7 +151,7 @@ router.post("/createClaim", (req, res, next) => {
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
     } else {
-      res.locals.claimId = rows[0].insertId;
+      res.locals.claimId = rows.insertId;
       res.locals.employeeId = claimData.employeeId;
       res.locals.companyId = claimData.employerId;
       res.locals.doctorId = claimData.doctorId;
@@ -168,10 +169,12 @@ router.post("/createClaim", (req, res, next) => {
   const formData = {
     name: req.body.name,
     code: req.body.code,
+    userId: res.locals.employeeId,
     personal: req.body.personal,
     formSpecific: req.body.formSpecific,
     workHistory: req.body.workHistory,
-    consent: req.body.consent
+    consent: req.body.consent,
+    status: 1
   };
   database.query("INSERT INTO Form SET ?", formData, function(
     err,
@@ -185,7 +188,7 @@ router.post("/createClaim", (req, res, next) => {
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
     } else {
-      res.locals.formId = rows[0].insertId;
+      res.locals.formId = rows.insertId;
       next();
     }
   });
@@ -198,13 +201,14 @@ router.post("/createClaim", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
   const formId = res.locals.formId;
+  const name = req.body.name;
   const userId = res.locals.employeeId;
   const type = req.body.type;
   const date = new Date();
   if (type === "form") {
     database.query(
-      "INSERT INTO Document (claimId, userId, type, data, createdAt) VALUES(?, ?, ?, ?, ?)",
-      [claimId, userId, type, formId, date],
+      "INSERT INTO Document (claimId, userId, name, type, data, createdAt) VALUES(?, ?, ?, ?, ?, ?)",
+      [claimId, userId, name, type, formId, date],
       function(err, rows, fields) {
         if (err) {
           console.log("Creating Document Error: ");
@@ -213,7 +217,7 @@ router.post("/createClaim", (req, res, next) => {
           appData["data"] = "Error Occured!";
           res.status(400).json(appData);
         } else {
-          res.locals.documentId = rows[0].insertId;
+          res.locals.documentId = rows.insertId;
           next();
         }
       }
@@ -224,35 +228,28 @@ router.post("/createClaim", (req, res, next) => {
 });
 
 /*
-  Reference Doc in Claim
+  Update Claim with Documents and Completed Employee
 */
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
+  const documentId = res.locals.documentId;
   const claimId = res.locals.claimId;
-  const formId = res.locals.formId;
-  const userId = res.locals.employeeId;
-  const type = req.body.type;
-  const date = new Date();
-  if (type === "form") {
-    database.query(
-      "INSERT INTO Document (claimId, userId, type, data, createdAt) VALUES(?, ?, ?, ?, ?)",
-      [claimId, userId, type, formId, date],
-      function(err, rows, fields) {
-        if (err) {
-          console.log("Creating Document Error: ");
-          console.log(err);
-          appData.error = 1;
-          appData["data"] = "Error Occured!";
-          res.status(400).json(appData);
-        } else {
-          res.locals.documentId = rows[0].insertId;
-          next();
-        }
+  database.query(
+    "UPDATE Claim SET documents = ?, employee = ? WHERE id = ?",
+    [documentId, 1, claimId],
+    function(err, rows, fields) {
+      if (err) {
+        console.log("Creating Document Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
+        res.locals.documentId = rows.insertId;
+        next();
       }
-    );
-  } else {
-    next();
-  }
+    }
+  );
 });
 
 /**
@@ -318,9 +315,11 @@ router.post("/createClaim", (req, res, next) => {
       if (err) {
         appData.error = 1;
         appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
       } else {
         appData.error = 0;
-        appData["data"] = "Successfully created NodeArray!";
+        appData["data"] = "Successfully created NodeArray and everything else!";
+        res.status(200).json(appData);
       }
     }
   );
