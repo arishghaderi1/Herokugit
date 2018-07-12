@@ -43,12 +43,13 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
   );
 });
 
-router.get("/documents/:claimId", (req, res, next) => {
+router.get("/documents/:claimId/:userId", (req, res, next) => {
   let appData = {};
   const claimId = req.params.claimId;
+  const userId = req.params.userId;
   database.query(
-    "SELECT Document.*, Form.* FROM Document INNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ?",
-    claimId,
+    "SELECT Document.*, Form.* FROM Document INNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ? AND Form.userId = ?",
+    [claimId, userId],
     function(err, rows, fields) {
       if (err) {
         console.log(err);
