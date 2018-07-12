@@ -50,7 +50,7 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
   let merger = claims;
   claims.map((claim, index) => {
     database.query(
-      "SELECT Document.*. Form.* FROM Document INNNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ?",
+      "SELECT Document.*, Form.* FROM Document INNER JOIN Form ON Document.data = Form.id WHERE type='form' AND Document.claimId = ?",
       claim.id,
       function(err, rows, fields) {
         if (err) {
@@ -59,7 +59,12 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
           appData["data"] = err;
           res.status(400).json(appData);
         } else {
-          Object.assign(merger[index], rows);
+          
+          if(rows.length > 0) {
+            console.log("FORMS RESULT: ");
+          console.log(rows);
+            merger[index].concat(rows);
+          }
         }
       }
     );
