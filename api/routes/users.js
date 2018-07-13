@@ -112,10 +112,12 @@ router.post("/register", function(req, res) {
     fields
   ) {
     if (!err) {
-      appData.error = 0;
-      appData["data"] = "User registered successfully!";
+      res.locals.user = {
+        email: userData.email,
+        password: userData.password,
+        salt: userData.salt
+      };
       next();
-      res.status(201).json(appData);
     } else {
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
