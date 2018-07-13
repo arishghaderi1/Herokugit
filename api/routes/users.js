@@ -114,12 +114,8 @@ router.post("/register", function(req, res) {
     if (!err) {
       appData.error = 0;
       appData["data"] = "User registered successfully!";
-      res.locals.user = {
-        email: userData.email,
-        password: userData.password,
-        salt: userData.salt
-      };
       next();
+      res.status(201).json(appData);
     } else {
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
@@ -174,6 +170,31 @@ router.post("/register", function(req, res, next) {
 /**
  * Separate Login
  */
+router.post("/login", function(req, res) {
+  let appData = {};
+  let user = {
+    email: req.body.email,
+    password: req.body.password,
+    salt: ""
+  };
+  database.query("SELECT salt FROM User WHERE email = ?", user.email, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["auth"] = false;
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
+    } else {
+      user.salt = rows[0].salt;
+      res.locals.user = user;
+      next();
+    }
+  });
+});
 
 router.post("/login", function(req, res, next) {
   let appData = {};
