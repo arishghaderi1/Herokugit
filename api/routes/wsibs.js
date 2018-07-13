@@ -47,8 +47,8 @@ router.get("/documents/:claimId", (req, res, next) => {
   let appData = {};
   const claimId = req.params.claimId;
   database.query(
-    "SELECT Document.type, Document.createdAt, Form.* FROM Document LEFT JOIN Form ON Document.referenceId = Form.id WHERE Document.claimId = ?",
-    claimId,
+    "SELECT Document.type, Document.createdAt, Form.* FROM Document INNER JOIN Form ON Document.referenceId = Form.id WHERE Document.claimId = ? AND Document.type = ?",
+    [claimId, "form"],
     function(err, rows, fields) {
       if (err) {
         console.log(err);
@@ -57,8 +57,8 @@ router.get("/documents/:claimId", (req, res, next) => {
         res.status(400).json(appData);
       } else {
         res.locals.forms = JSON.parse(JSON.stringify(rows));
-        res.status(200).json(rows);
-        //next();
+        //res.status(200).json(rows);
+        next();
       }
     }
   );
@@ -68,8 +68,8 @@ router.get("/documents/:claimId", (req, res, next) => {
   let appData = {};
   const claimId = req.params.claimId;
   database.query(
-    "SELECT Document.type, Document.createdAt, Asset.* FROM Document INNER JOIN Asset ON Document.referenceId = Asset.id WHERE Document.claimId = ?",
-    claimId,
+    "SELECT Document.type, Document.createdAt, Asset.* FROM Document INNER JOIN Asset ON Document.referenceId = Asset.id WHERE Document.claimId = ? AND Document.type = ?",
+    [claimId, "image"],
     function(err, rows, fields) {
       if (err) {
         console.log(err);
