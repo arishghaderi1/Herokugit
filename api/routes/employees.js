@@ -51,7 +51,7 @@ router.post("/workHistory", (req, res, next) => {
   let appData = {};
   const history = {
     userId: req.body.userId,
-    job: req.body.job,
+    occupation: req.body.occupation,
     tasks: req.body.tasks,
     startDate: req.body.startDate,
     endDate: req.body.endDate,
@@ -70,7 +70,7 @@ router.post("/workHistory", (req, res, next) => {
     } else {
       appData.error = 0;
       appData["data"] = "Successfully created Work History entry!";
-      res.status(200).json(appData);
+      res.status(201).json(appData);
     }
   });
 });
@@ -80,7 +80,7 @@ router.get("/:userId", function(req, res) {
   const id = req.params.userId;
   database.query(
     "SELECT * FROM Notification WHERE userId = ? ORDER BY createdAt DESC",
-    [id],
+    id,
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -88,9 +88,7 @@ router.get("/:userId", function(req, res) {
         console.log(err);
         res.status(400).json(appData);
       } else {
-        appData["error"] = 0;
-        appData["data"] = rows;
-        res.status(200).json(appData);
+        res.status(200).json(rows);
       }
     }
   );
@@ -99,7 +97,7 @@ router.get("/:userId", function(req, res) {
 router.get("/getForms/:userId", function(req, res) {
   let appData = {};
   const id = req.params.userId;
-  database.query("SELECT * FROM Form WHERE userId = ?", [id], function(
+  database.query("SELECT * FROM Form WHERE userId = ?", id, function(
     err,
     rows,
     fields

@@ -100,7 +100,7 @@ router.patch("/updateWorkHistory", (req, res, next) => {
  */
 router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
-  const actionRequired = "{}";
+  const actionRequired = JSON.stringify({});
   database.query(
     "UPDATE Claim SET employer = ?, actionRequired = ?",
     [1, actionRequired],
@@ -122,8 +122,9 @@ router.patch("/updateWorkHistory", (req, res, next) => {
 router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
+
   database.query(
-    "SELECT id FROM Claim WHERE id = ? AND employee = ? AND employer = ? AND doctor = ?",
+    "SELECT id, adjudicatorId, employeeId FROM Claim WHERE id = ? AND employee = ? AND employer = ? AND doctor = ?",
     [claimId, 1, 1, 1],
     function(err, rows, fields) {
       if (err) {
@@ -136,6 +137,8 @@ router.patch("/updateWorkHistory", (req, res, next) => {
           appData["data"] = "Not all parties are done!";
           res.status(201).json(appData);
         } else {
+          res.locals.adjudicatorId = rows.adjudicatorId;
+          res.locals.employeeId = rows.employeeId;
           next();
         }
       }
@@ -149,6 +152,32 @@ router.patch("/updateWorkHistory", (req, res, next) => {
 router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
+
+  database.query(
+    "SELECT Step2 FROM NodeArray WHERE claimId = ?",
+    claimId,
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
+        appData.error = 0;
+        appData["data"] = "Successfully updated NodeArray !";
+        res.locals.startDate = rows.startDate;
+        next();
+      }
+    }
+  );
+});
+
+/**
+ * Update Node Array
+ */
+router.patch("/updateWorkHistory", (req, res, next) => {
+  let appData = {};
+  const claimId = res.locals.claimId;
+  const startDate = res.locals.startDate;
   const date = new Date();
   const nodeArray = [
     {
@@ -158,7 +187,7 @@ router.patch("/updateWorkHistory", (req, res, next) => {
       state: 1,
       nextSteps:
         "Once all information from all parties has been received the claim will be reveiwed by an adjudicator who will make a decision.",
-      startDate: "00-00-00 00:00:00",
+      startDate: startDate,
       endDate: date
     },
     {
@@ -184,10 +213,62 @@ router.patch("/updateWorkHistory", (req, res, next) => {
       } else {
         appData.error = 0;
         appData["data"] = "Successfully updated NodeArray !";
-        res.status(201).json(appData);
+        next();
       }
     }
   );
+});
+
+/*
+  Send notifications to everybody
+*/
+router.post("/updateWorkHistory", (req, res, next) => {
+  let appData = {};
+  const data = [
+    {
+      userId: res.locals.adjudicatorId,
+      action: "Completed Information Gathering",
+      body:
+        "Please confirm all neccesary documents are completed and make a decision.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({
+        tab: "DashboardTab",
+        details: { activeClaim: res.locals.claimId }
+      })
+    },
+    {
+      userId: res.locals.employeeId,
+      action: "Completed Information Gathering",
+      body:
+        "We now have all the required information to make a decision. You will be notified once that is completed.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({
+        tab: "DashboardTab",
+        details: {}
+      })
+    }
+  ];
+
+  data.map(user => {
+    database.query("INSERT INTO Notification SET ?", user, function(
+      err,
+      rows,
+      fields
+    ) {
+      if (err) {
+        console.log("Creating Notifications Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    });
+  });
+  appData.error = 0;
+  appData["data"] = "Successfully gathered all information!";
+  res.status(201).json(appData);
 });
 
 module.exports = router;
