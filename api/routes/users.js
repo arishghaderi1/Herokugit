@@ -172,7 +172,7 @@ router.post("/register", function(req, res, next) {
 /**
  * Separate Login
  */
-router.post("/login", function(req, res) {
+router.post("/login", function(req, res, next) {
   let appData = {};
   let user = {
     email: req.body.email,
