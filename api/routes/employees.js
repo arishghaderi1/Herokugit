@@ -2,6 +2,25 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db.js");
 
+router.get("/claims/:userId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.userId;
+  database.query(
+    "SELECT * FROM Claim WHERE employeeId = ? AND status != ? ORDER BY createdAt DESC LIMIT 1",
+    [id, "inActive"],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
+    }
+  );
+});
+
 router.get("/nodeArray/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
