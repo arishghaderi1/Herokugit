@@ -47,34 +47,6 @@ router.patch("/updateInfo", (req, res, next) => {
   );
 });
 
-router.post("/workHistory", (req, res, next) => {
-  let appData = {};
-  const history = {
-    userId: req.body.userId,
-    occupation: req.body.occupation,
-    tasks: req.body.tasks,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
-    companyId: req.body.companyId
-  };
-  database.query("INSERT INTO WorkHistory SET ?", [history], function(
-    err,
-    rows,
-    fields
-  ) {
-    if (err) {
-      appData.error = 1;
-      appData["data"] = "Error Occured!";
-      console.log(err);
-      res.status(400).json(appData);
-    } else {
-      appData.error = 0;
-      appData["data"] = "Successfully created Work History entry!";
-      res.status(201).json(appData);
-    }
-  });
-});
-
 router.get("/getForms/:userId", function(req, res) {
   let appData = {};
   const id = req.params.userId;
@@ -101,16 +73,12 @@ router.get("/getForms/:userId", function(req, res) {
 START OF CREATE CLAIM CALLS 
 ***************************
 */
-
-/*
-  Create a claim and return insertId
-*/
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
   let claimData = {
     employeeId: req.body.employeeId,
-    doctorId: req.body.doctorId,
-    companyId: req.body.companyId,
+    doctorId: null,
+    companyId: null,
     adjudicatorId: 3,
     actionRequired: req.body.actionRequired,
     createdAt: new Date(),
@@ -131,9 +99,6 @@ router.post("/createClaim", (req, res, next) => {
       res.status(400).json(appData);
     } else {
       res.locals.claimId = rows.insertId;
-      res.locals.employeeId = claimData.employeeId;
-      res.locals.companyId = claimData.companyId;
-      res.locals.doctorId = claimData.doctorId;
       res.locals.adjudicatorId = claimData.adjudicatorId;
       next();
     }
@@ -141,14 +106,223 @@ router.post("/createClaim", (req, res, next) => {
 });
 
 /*
-  Create Form and return insertId
+  Send notification to Adjudicator!
 */
 router.post("/createClaim", (req, res, next) => {
+  let appData = {};
+  const data = [
+    {
+      userId: res.locals.adjudicatorId,
+      action: "New Claim",
+      body:
+        "You've been assigned a new claim. Watch for updates for required forms being filled out.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({
+        tab: "DashboardTab",
+        details: { activeClaim: res.locals.claimId }
+      })
+    }
+  ];
+
+  data.map(user => {
+    database.query("INSERT INTO Notification SET ?", user, function(
+      err,
+      rows,
+      fields
+    ) {
+      if (err) {
+        console.log("Creating Notifications Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    });
+  });
+  res.status(200).json(res.locals.claimId);
+});
+/**
+ * **************************************************************
+ */
+
+/**
+ * **************************
+ * ASSIGN DOCTOR TO CLAIM &
+ * SEND THEM A NOTIFICATION
+ * **************************
+ */
+router.get("/assignDoctor/:doctorId", (req, res, next) => {
+  let appData = {};
+  const doctorId = req.params.doctorId;
+  database.query("UPDATE CLAIM SET doctorId = ?", doctorId, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.doctorId = doctorId;
+      next();
+    }
+  });
+});
+
+/*
+  Send notification to Doctor
+*/
+router.get("/assignDoctor", (req, res, next) => {
+  let appData = {};
+  const data = [
+    {
+      userId: res.locals.doctorId,
+      action: "Upload Patient Audiogram",
+      body: "Please upload any and all audiograms for this patient.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({
+        tab: "DashboardTab",
+        details: { activeClaim: res.locals.claimId }
+      })
+    }
+  ];
+
+  data.map(user => {
+    database.query("INSERT INTO Notification SET ?", user, function(
+      err,
+      rows,
+      fields
+    ) {
+      if (err) {
+        console.log("Creating Notifications Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    });
+  });
+  appData.error = 0;
+  appData["data"] =
+    "Successfully assigned doctor to claim and sent notification!";
+  res.status(201).json(appData);
+});
+/**
+ * **************************************************************
+ */
+
+/**
+ * **************************
+ * CREATE WORK HISTORY & SEND
+ * NOTIFICATION TO EMPLOYER
+ * **************************
+ */
+router.post("/workHistory", (req, res, next) => {
+  let appData = {};
+  const history = {
+    userId: req.body.userId,
+    occupation: req.body.occupation,
+    tasks: req.body.tasks,
+    startDate: req.body.startDate,
+    endDate: req.body.endDate,
+    companyId: req.body.companyId
+  };
+  database.query("INSERT INTO WorkHistory SET ?", [history], function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.companyId = history.companyId;
+      next();
+    }
+  });
+});
+
+/*
+  Get primaryContactId of Company
+*/
+router.post("/workHistory", (req, res, next) => {
+  let appData = {};
+  const companyId = res.locals.companyId;
+  database.query(
+    "SELECT contactId FROM Company WHERE id = ?",
+    companyId,
+    function(err, rows, fields) {
+      if (err) {
+        console.log("Getting contactId Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
+        res.locals.contactId = rows[0].contactId;
+        next();
+      }
+    }
+  );
+});
+
+/*
+  Send notification to Employer
+*/
+router.post("/workHistory", (req, res, next) => {
+  let appData = {};
+  const data = [
+    {
+      userId: res.locals.contactId,
+      action: "Confirm Employment",
+      body: "Please confirm this workers employment.",
+      isRead: 0,
+      createdAt: new Date(),
+      goTo: JSON.stringify({ tab: "DashboardTab", details: {} })
+    }
+  ];
+
+  data.map(user => {
+    database.query("INSERT INTO Notification SET ?", user, function(
+      err,
+      rows,
+      fields
+    ) {
+      if (err) {
+        console.log("Creating Notifications Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    });
+  });
+  appData.error = 0;
+  appData["data"] = "Successfully created Work History entry!";
+  res.status(201).json(appData);
+});
+/**
+ * **************************************************************
+ */
+
+/**
+ * **************************
+ * CREATE HEARING LOSS FORM
+ * & ASSIGN TO DOC AND CLAIM
+ * **************************
+ */
+router.post("/createForm", (req, res, next) => {
   let appData = {};
   const formData = {
     name: req.body.name,
     code: req.body.code,
-    userId: res.locals.employeeId,
+    userId: req.body.employeeId,
     personal: req.body.personal,
     formSpecific: req.body.formSpecific,
     workHistory: req.body.workHistory,
@@ -176,7 +350,7 @@ router.post("/createClaim", (req, res, next) => {
 /*
   Reference Form in Document
 */
-router.post("/createClaim", (req, res, next) => {
+router.post("/createForm", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
   const formId = res.locals.formId;
@@ -209,12 +383,12 @@ router.post("/createClaim", (req, res, next) => {
 /*
   Update Claim with Documents and Completed Employee
 */
-router.post("/createClaim", (req, res, next) => {
+router.post("/createForm", (req, res, next) => {
   let appData = {};
-  const documentId = res.locals.documentId;
+  const documentId = res.locals.documentId + ",";
   const claimId = res.locals.claimId;
   database.query(
-    "UPDATE Claim SET documents = ?, employee = ? WHERE id = ?",
+    "UPDATE Claim SET documents = CONCAT(documents, ?), employee = ? WHERE id = ?",
     [documentId, 1, claimId],
     function(err, rows, fields) {
       if (err) {
@@ -224,36 +398,16 @@ router.post("/createClaim", (req, res, next) => {
         appData["data"] = "Error Occured!";
         res.status(400).json(appData);
       } else {
-        res.locals.documentId = rows.insertId;
-        next();
+        appData["error"] = 0;
+        appData["data"] = "Created Form and Document reference.";
+        res.status(201).json(appData);
       }
     }
   );
 });
-
-/*
-  Get primaryContactId
-*/
-router.post("/createClaim", (req, res, next) => {
-  let appData = {};
-  const companyId = res.locals.companyId;
-  database.query(
-    "SELECT contactId FROM Company WHERE id = ?",
-    companyId,
-    function(err, rows, fields) {
-      if (err) {
-        console.log("Getting contactId Error: ");
-        console.log(err);
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        res.status(400).json(appData);
-      } else {
-        res.locals.contactId = rows[0].contactId;
-        next();
-      }
-    }
-  );
-});
+/**
+ * **************************************************************
+ */
 
 /*
   Send notifications to everybody
