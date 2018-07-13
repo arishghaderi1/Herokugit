@@ -114,9 +114,10 @@ router.post("/register", function(req, res, next) {
     if (!err) {
       res.locals.user = {
         email: userData.email,
-        password: userData.password,
+        password: req.body.password,
         salt: userData.salt
       };
+      res.locals.employeeId = rows.insertId;
       next();
     } else {
       console.log(err);
@@ -124,6 +125,42 @@ router.post("/register", function(req, res, next) {
       res.status(400).json(appData);
     }
   });
+});
+
+/*
+  Send notifications to fill out information.
+*/
+router.post("/register", (req, res, next) => {
+  let appData = {};
+  const notif = {
+    userId: res.locals.employeeId,
+    action: "Fill Out Your Personal Information",
+    body:
+      "Welcome to WSIB Portal, please start by clicking me and filling out some more personal information about yourself. You can also start by creating a claim.",
+    isRead: 0,
+    createdAt: new Date(),
+    goTo: JSON.stringify({
+      tab: "ProfileTab",
+      details: { buttonClicked: "personal" }
+    })
+  };
+
+  data.map(user => {
+    database.query("INSERT INTO Notification SET ?", user, function(
+      err,
+      rows,
+      fields
+    ) {
+      if (err) {
+        console.log("Creating Notifications Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      }
+    });
+  });
+  next();
 });
 
 /**
