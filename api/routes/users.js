@@ -144,21 +144,16 @@ router.post("/register", (req, res, next) => {
       details: { buttonClicked: "personal" }
     })
   };
-
-  data.map(user => {
-    database.query("INSERT INTO Notification SET ?", user, function(
-      err,
-      rows,
-      fields
-    ) {
-      if (err) {
-        console.log("Creating Notifications Error: ");
-        console.log(err);
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        res.status(400).json(appData);
-      }
-    });
+  database.query("INSERT INTO Notification SET ?", notif, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
+    }
   });
   next();
 });

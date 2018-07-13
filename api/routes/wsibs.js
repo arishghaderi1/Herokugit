@@ -47,7 +47,7 @@ router.get("/documents/:claimId", (req, res, next) => {
   let appData = {};
   const claimId = req.params.claimId;
   database.query(
-    "SELECT Document.type, Document.createdAt, Form.* FROM Document INNER JOIN Form ON Document.referenceId = Form.id WHERE Document.claimId = ?",
+    "SELECT Document.type, Document.createdAt, Form.* FROM Document LEFT JOIN Form ON Document.referenceId = Form.id WHERE Document.claimId = ?",
     claimId,
     function(err, rows, fields) {
       if (err) {
@@ -57,7 +57,8 @@ router.get("/documents/:claimId", (req, res, next) => {
         res.status(400).json(appData);
       } else {
         res.locals.forms = JSON.parse(JSON.stringify(rows));
-        next();
+        res.status(200).json(rows);
+        //next();
       }
     }
   );
@@ -76,10 +77,8 @@ router.get("/documents/:claimId", (req, res, next) => {
         appData["data"] = err;
         res.status(400).json(appData);
       } else {
-        let merged = Object.assign(
-          res.locals.forms,
-          JSON.parse(JSON.stringify(rows))
-        );
+        console.log(res.locals.forms);
+        let merged = [...res.locals.forms, ...JSON.parse(JSON.stringify(rows))];
         res.status(200).json(merged);
       }
     }
