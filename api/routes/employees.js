@@ -75,25 +75,6 @@ router.post("/workHistory", (req, res, next) => {
   });
 });
 
-router.get("/:userId", function(req, res) {
-  let appData = {};
-  const id = req.params.userId;
-  database.query(
-    "SELECT * FROM Notification WHERE userId = ? ORDER BY createdAt DESC",
-    id,
-    function(err, rows, fields) {
-      if (err) {
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        console.log(err);
-        res.status(400).json(appData);
-      } else {
-        res.status(200).json(rows);
-      }
-    }
-  );
-});
-
 router.get("/getForms/:userId", function(req, res) {
   let appData = {};
   const id = req.params.userId;
