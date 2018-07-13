@@ -103,7 +103,7 @@ router.post("/register", function(req, res, next) {
     password: result.hashed,
     salt: result.salt,
     view: req.body.view,
-    created_at: today
+    createdAt: today
   };
 
   database.query("INSERT INTO User SET ?", userData, function(
