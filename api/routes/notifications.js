@@ -7,7 +7,7 @@ router.get("/:userId", function(req, res) {
   const id = req.params.userId;
   database.query(
     "SELECT * FROM Notification WHERE userId = ? ORDER BY createdAt DESC",
-    [id],
+    id,
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
