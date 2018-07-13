@@ -97,7 +97,7 @@ router.post("/register", function(req, res, next) {
   const result = saltHashPassword(password);
 
   const userData = {
-    fristName: req.body.firstName,
+    firstName: req.body.firstName,
     lastName: req.body.lastName,
     email: req.body.email,
     password: result.hashed,
@@ -119,6 +119,7 @@ router.post("/register", function(req, res, next) {
       };
       next();
     } else {
+      console.log(err);
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
     }
@@ -140,6 +141,7 @@ router.post("/register", function(req, res, next) {
       appData.error = 1;
       appData["auth"] = false;
       appData["data"] = "Error Occured!";
+      console.log(err);
       res.status(400).json(appData);
     } else {
       if (rows.length > 0) {
