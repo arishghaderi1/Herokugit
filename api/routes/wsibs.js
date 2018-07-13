@@ -57,7 +57,6 @@ router.get("/documents/:claimId", (req, res, next) => {
         res.status(400).json(appData);
       } else {
         res.locals.forms = JSON.parse(JSON.stringify(rows));
-        //res.status(200).json(rows);
         next();
       }
     }
@@ -77,7 +76,6 @@ router.get("/documents/:claimId", (req, res, next) => {
         appData["data"] = err;
         res.status(400).json(appData);
       } else {
-        console.log(res.locals.forms);
         let merged = [...res.locals.forms, ...JSON.parse(JSON.stringify(rows))];
         res.status(200).json(merged);
       }
