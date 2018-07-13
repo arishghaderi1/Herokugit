@@ -85,7 +85,7 @@ router.post("/demoRegister/:id", function(req, res) {
 });
 
 // Register a new user
-router.post("/register", function(req, res) {
+router.post("/register", function(req, res, next) {
   const today = new Date();
   let appData = {
     error: 1,
