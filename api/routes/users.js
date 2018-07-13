@@ -114,7 +114,7 @@ router.post("/register", function(req, res, next) {
     if (!err) {
       res.locals.user = {
         email: userData.email,
-        password: userData.password,
+        password: req.body.password,
         salt: userData.salt
       };
       next();
