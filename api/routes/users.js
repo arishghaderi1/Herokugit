@@ -97,11 +97,12 @@ router.post("/register", function(req, res) {
   const result = saltHashPassword(password);
 
   const userData = {
-    name: req.body.name,
+    fristName: req.body.firstName,
+    lastName: req.body.lastName,
     email: req.body.email,
     password: result.hashed,
     salt: result.salt,
-    view: "employee",
+    view: req.body.view,
     created_at: today
   };
 
@@ -113,7 +114,12 @@ router.post("/register", function(req, res) {
     if (!err) {
       appData.error = 0;
       appData["data"] = "User registered successfully!";
-      res.status(201).json(appData);
+      res.locals.user = {
+        email: userData.email,
+        password: userData.password,
+        salt: userData.salt
+      };
+      next();
     } else {
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
@@ -121,32 +127,53 @@ router.post("/register", function(req, res) {
   });
 });
 
-// Login user
-router.post("/login", function(req, res, next) {
+/**
+ * Login user in after registration
+ */
+router.post("/register", function(req, res, next) {
   let appData = {};
-  let user = {
-    email: req.body.email,
-    password: req.body.password,
-    salt: ""
-  };
-  database.query("SELECT salt FROM User WHERE email = ?", user.email, function(
+  const user = res.locals.user;
+  database.query("SELECT * FROM User WHERE email = ?", user.email, function(
     err,
     rows,
     fields
   ) {
     if (err) {
-      console.log(err);
       appData.error = 1;
       appData["auth"] = false;
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
     } else {
-      user.salt = rows[0].salt;
-      res.locals.user = user;
-      next();
+      if (rows.length > 0) {
+        const result = saltHashPassword(user.password, user.salt);
+        if (rows[0].password === result.hashed) {
+          const token = jwt.sign({ data: rows[0].id }, process.env.SECRET_KEY, {
+            expiresIn: 604800
+          });
+          appData.error = 0;
+          appData["auth"] = true;
+          appData["token"] = token;
+          appData["data"] = rows[0];
+          res.status(200).json(appData);
+        } else {
+          appData.error = 1;
+          appData["auth"] = false;
+          appData["data"] = "Email and Password does not match";
+          res.status(404).json(appData);
+        }
+      } else {
+        appData.error = 1;
+        appData["auth"] = false;
+        appData["data"] = "Email does not exists!";
+        res.status(404).json(appData);
+      }
     }
   });
 });
+
+/**
+ * Separate Login
+ */
 
 router.post("/login", function(req, res, next) {
   let appData = {};
@@ -230,7 +257,11 @@ router.get("/getUsers", function(req, res) {
 router.get("/getUser/:userId", function(req, res) {
   const token = req.body.token || req.headers["token"];
   let appData = {};
-  database.query("SELECT * FROM User Where id = ?", req.params.userId, function(err, rows, fields) {
+  database.query("SELECT * FROM User Where id = ?", req.params.userId, function(
+    err,
+    rows,
+    fields
+  ) {
     if (!err) {
       appData["error"] = 0;
       appData["data"] = rows;
