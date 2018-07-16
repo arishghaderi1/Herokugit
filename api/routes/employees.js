@@ -2,11 +2,53 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db.js");
 
-router.get("/claims/:userId", (req, res, next) => {
+/**
+ * GET 3 CALLS FOR SETTINGS, NOTIFICATION & CLAIM
+ */
+router.get("/general/:userId", (req, res, next) => {
   let appData = {};
   const id = req.params.userId;
+  database.query("SELECT * FROM Settings WHERE userId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.settings = JSON.parse(rows[0]);
+      res.locals.userId = id;
+      next();
+    }
+  });
+});
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = res.locals.userId;
+  database.query("SELECT * FROM Notification WHERE userId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.notification = JSON.parse(rows);
+      next();
+    }
+  });
+});
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = res.locals.userId;
   database.query(
-    "SELECT * FROM Claim WHERE employeeId = ? AND status != ? ORDER BY createdAt DESC LIMIT 1",
+    "SELECT * FROM Claim WHERE employeeId = ? AND status != ?",
     [id, "inActive"],
     function(err, rows, fields) {
       if (err) {
@@ -15,29 +57,46 @@ router.get("/claims/:userId", (req, res, next) => {
         console.log(err);
         res.status(400).json(appData);
       } else {
-        res.status(200).json(rows);
+        if (rows.length > 0) {
+          res.locals.claim = JSON.parse(rows[0]);
+          next();
+        } else {
+          const data = JSON.stringify({
+            settings: res.locals.settings,
+            notification: res.locals.notification,
+            claim: [],
+            nodeArray: []
+          });
+          res.status(200).json(data);
+        }
       }
     }
   );
 });
-
-router.get("/nodeArray/:claimId", (req, res, next) => {
+router.get("/general/:userId", (req, res, next) => {
   let appData = {};
-  const id = req.params.claimId;
-  database.query(
-    "SELECT * FROM NodeArray WHERE claimId = ? AND status != ? ORDER BY createdAt DESC LIMIT 1",
-    [id, "inActive"],
-    function(err, rows, fields) {
-      if (err) {
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        console.log(err);
-        res.status(400).json(appData);
-      } else {
-        res.status(200).json(rows);
-      }
+  const id = res.locals.claim.id;
+  const claim = res.locals.claim;
+  database.query("SELECT * FROM NodeArray WHERE claimId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      const data = JSON.stringify({
+        settings: res.locals.settings,
+        notification: res.locals.notification,
+        claim: claim,
+        nodeArray: JSON.parse(rows[0])
+      });
+      res.status(200).json(data);
     }
-  );
+  });
 });
 
 router.patch("/updateInfo", (req, res, next) => {
