@@ -7,7 +7,7 @@ router.get("/claims/:currentUserId", (req, res, next) => {
   const id = req.params.currentUserId;
 
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.userId WHERE Claim.doctorId = ?",
+    "SELECT User.firstName, User.lastName, User.email as email, User.phone as phone, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.userId WHERE Claim.doctorId = ?",
     [id],
     function(err, rows, fields) {
       if (err) {
@@ -78,6 +78,118 @@ router.get("/audiograms/:claimId", (req, res, next) => {
     }
   });
 });
+
+/**
+ * Get all audiograms associate with claimId
+ */
+router.get("/documents/:claimId", (req, res, next) => {
+  let appData = {};
+  const claimId = req.params.claimId;
+  database.query(
+    "SELECT Document.type, Document.createdAt, Asset.* FROM Document INNER JOIN Asset ON Document.referenceId = Asset.id WHERE Document.claimId = ? AND Document.type = ?",
+    [claimId, "image"],
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
+    }
+  );
+});
+/**
+ * *******************************************
+ */
+
+/**
+ * Create Audiogram Asset & then create Document to Reference Asset
+ * Finally append Document to Claim
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const formData = {
+    userId: req.body.doctorId,
+    imageType: req.body.imageType,
+    data: req.body.data
+  };
+  database.query("INSERT INTO Asset SET ?", formData, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = err;
+      res.status(400).json(appData);
+    } else {
+      res.locals.docData = {
+        claimId: req.body.claimId,
+        referenceId: rows.insertId,
+        name: req.body.name,
+        type: req.body.type,
+        createdAt: new Date()
+      };
+      next();
+    }
+  });
+});
+
+/**
+ * Reference Asset
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const docData = res.locals.docData;
+  database.query("INSERT INTO Document SET ?", docData, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = err;
+      res.status(400).json(appData);
+    } else {
+      res.locals.claimId = docData.claimId;
+      res.locals.docId = rows.insertId;
+      next();
+    }
+  });
+});
+
+/**
+ * Update Claim with Document Id
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const docId = res.locals.docId;
+  const notNull = "," + docId;
+  const claimId = res.locals.claimId;
+  database.query(
+    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), doctor = ? WHERE id = ?",
+    [notNull, docId, 1, claimId],
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        appData.error = 0;
+        appData["data"] = "Successfully created document and form.";
+        res.status(200).json(appData);
+      }
+    }
+  );
+});
+/**
+ * ****************************************************************
+ */
 
 router.get("/serviceHistory/:userId", (req, res, next) => {
   let appData = {};
