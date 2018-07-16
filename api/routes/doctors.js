@@ -7,7 +7,7 @@ router.get("/claims/:currentUserId", (req, res, next) => {
   const id = req.params.currentUserId;
 
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.userId WHERE Claim.doctorId = ?",
+    "SELECT User.firstName, User.lastName, User.email as email, User.phone as phone, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, employeeId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.employeeId WHERE Claim.doctorId = ?",
     [id],
     function(err, rows, fields) {
       if (err) {
@@ -26,7 +26,7 @@ router.post("/claims/:currentUserId", (req, res, next) => {
   const id = req.params.currentUserId;
   const list = req.body.currentList.length > 0 ? req.body.currentList : 0;
   database.query(
-    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, userId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.userId WHERE Claim.doctorId = ? AND Claim.id NOT IN (?) LIMIT 20",
+    "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, employeeId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.employeeId WHERE Claim.doctorId = ? AND Claim.id NOT IN (?) LIMIT 20",
     [id, list],
     function(err, rows, fields) {
       if (err) {
@@ -79,11 +79,149 @@ router.get("/audiograms/:claimId", (req, res, next) => {
   });
 });
 
-router.get("/serviceHistory/:userId", (req, res, next) => {
+/**
+ * Get all audiograms associate with claimId
+ */
+router.get("/documents/:claimId", (req, res, next) => {
   let appData = {};
-  const id = req.params.userId;
+  const claimId = req.params.claimId;
   database.query(
-    "SELECT * FROM ServiceHistory WHERE userId = ?",
+    "SELECT Document.type, Document.createdAt, Asset.* FROM Document INNER JOIN Asset ON Document.referenceId = Asset.id WHERE Document.claimId = ? AND Document.type = ?",
+    [claimId, "image"],
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
+      }
+    }
+  );
+});
+/**
+ * *******************************************
+ */
+
+/**
+ * Create Audiogram Asset & then create Document to Reference Asset
+ * Finally append Document to Claim
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const formData = {
+    userId: req.body.doctorId,
+    imageType: req.body.imageType,
+    data: req.body.data
+  };
+  database.query("INSERT INTO Asset SET ?", formData, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = err;
+      res.status(400).json(appData);
+    } else {
+      res.locals.docData = {
+        claimId: req.body.claimId,
+        referenceId: rows.insertId,
+        name: req.body.name,
+        type: req.body.type,
+        createdAt: new Date()
+      };
+      next();
+    }
+  });
+});
+
+/**
+ * Reference Asset
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const docData = res.locals.docData;
+  database.query("INSERT INTO Document SET ?", docData, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = err;
+      res.status(400).json(appData);
+    } else {
+      res.locals.claimId = docData.claimId;
+      res.locals.docId = rows.insertId;
+      next();
+    }
+  });
+});
+
+/**
+ * Get Claim actionRequired object
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const claimId = res.locals.claimId;
+  database.query(
+    "SELECT actionRequired FROM Claim WHERE id = ?",
+    claimId,
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        res.locals.actionRequired = rows[0].actionRequired;
+        next();
+      }
+    }
+  );
+});
+
+/**
+ * Update Claim with Document Id
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const docId = res.locals.docId;
+  const notNull = "," + docId;
+  const claimId = res.locals.claimId;
+  let alteredActions = JSON.parse(res.locals.actionRequired);
+  alteredActions.doctor = { state: 0, message: "" };
+  alteredActions = JSON.stringify(alteredActions);
+  database.query(
+    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), actionRequired = ?, doctor = ? WHERE id = ?",
+    [notNull, docId, alteredActions, 1, claimId],
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        appData.error = 0;
+        appData["data"] = "Successfully created document and form.";
+        res.status(200).json(appData);
+      }
+    }
+  );
+});
+/**
+ * ****************************************************************
+ */
+
+router.get("/serviceHistory/:employeeId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.employeeId;
+  database.query(
+    "SELECT * FROM ServiceHistory WHERE employeeId = ?",
     [id],
     function(err, rows, fields) {
       if (err) {

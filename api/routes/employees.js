@@ -2,12 +2,12 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db.js");
 
-router.get("/nodeArray/:userId", (req, res, next) => {
+router.get("/claims/:userId", (req, res, next) => {
   let appData = {};
   const id = req.params.userId;
   database.query(
-    "SELECT * FROM NodeArray WHERE employeeId = ? ORDER BY id",
-    [id],
+    "SELECT * FROM Claim WHERE employeeId = ? AND status != ? ORDER BY createdAt DESC LIMIT 1",
+    [id, "inActive"],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -15,7 +15,26 @@ router.get("/nodeArray/:userId", (req, res, next) => {
         console.log(err);
         res.status(400).json(appData);
       } else {
-        res.status(200).json(rows[0]);
+        res.status(200).json(rows);
+      }
+    }
+  );
+});
+
+router.get("/nodeArray/:claimId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.claimId;
+  database.query(
+    "SELECT * FROM NodeArray WHERE claimId = ? AND status != ? ORDER BY createdAt DESC LIMIT 1",
+    [id, "inActive"],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.status(200).json(rows);
       }
     }
   );
@@ -370,7 +389,7 @@ router.post("/createForm", (req, res, next) => {
           appData["data"] = "Error Occured!";
           res.status(400).json(appData);
         } else {
-          res.locals.documentId = rows.insertId;
+          res.locals.docId = rows.insertId;
           next();
         }
       }
@@ -385,11 +404,12 @@ router.post("/createForm", (req, res, next) => {
 */
 router.post("/createForm", (req, res, next) => {
   let appData = {};
-  const documentId = res.locals.documentId + ",";
+  const docId = res.locals.docId;
+  const notNull = "," + docId;
   const claimId = res.locals.claimId;
   database.query(
-    "UPDATE Claim SET documents = CONCAT(documents, ?), employee = ? WHERE id = ?",
-    [documentId, 1, claimId],
+    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), employee = ? WHERE id = ?",
+    [notNull, docId, 1, claimId],
     function(err, rows, fields) {
       if (err) {
         console.log("Creating Document Error: ");
