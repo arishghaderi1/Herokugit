@@ -8,26 +8,6 @@ const database = require("../db.js");
 router.get("/general/:userId", (req, res, next) => {
   let appData = {};
   const id = req.params.userId;
-  database.query("SELECT * FROM Settings WHERE userId = ?", id, function(
-    err,
-    rows,
-    fields
-  ) {
-    if (err) {
-      appData.error = 1;
-      appData["data"] = "Error Occured!";
-      console.log(err);
-      res.status(400).json(appData);
-    } else {
-      res.locals.settings = JSON.parse(rows[0]);
-      res.locals.userId = id;
-      next();
-    }
-  });
-});
-router.get("/general/:userId", (req, res, next) => {
-  let appData = {};
-  const id = res.locals.userId;
   database.query("SELECT * FROM Notification WHERE userId = ?", id, function(
     err,
     rows,
@@ -62,7 +42,6 @@ router.get("/general/:userId", (req, res, next) => {
           next();
         } else {
           const data = JSON.stringify({
-            settings: res.locals.settings,
             notification: res.locals.notification,
             claim: [],
             nodeArray: []
@@ -89,7 +68,6 @@ router.get("/general/:userId", (req, res, next) => {
       res.status(400).json(appData);
     } else {
       const data = JSON.stringify({
-        settings: res.locals.settings,
         notification: res.locals.notification,
         claim: claim,
         nodeArray: JSON.parse(rows[0])
