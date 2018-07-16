@@ -253,7 +253,7 @@ router.get("/assignDoctor/:doctorId", (req, res, next) => {
 /*
   Send notification to Doctor
 */
-router.get("/assignDoctor", (req, res, next) => {
+router.get("/assignDoctor/:doctorId", (req, res, next) => {
   let appData = {};
   const data = [
     {
