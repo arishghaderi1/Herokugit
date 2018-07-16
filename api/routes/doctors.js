@@ -163,6 +163,29 @@ router.post("/documents", (req, res, next) => {
 });
 
 /**
+ * Get Claim actionRequired object
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  const claimId = res.locals.claimId;
+  database.query(
+    "SELECT actionRequired FROM Claim WHERE id = ?",
+    claimId,
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        res.locals.actionRequired = rows[0].actionRequired;
+        next();
+      }
+    }
+  );
+});
+
+/**
  * Update Claim with Document Id
  */
 router.post("/documents", (req, res, next) => {
@@ -170,9 +193,12 @@ router.post("/documents", (req, res, next) => {
   const docId = res.locals.docId;
   const notNull = "," + docId;
   const claimId = res.locals.claimId;
+  let alteredActions = JSON.parse(res.locals.actionRequired);
+  alteredActions.doctor = { state: 0, message: "" };
+  alteredActions = JSON.stringify(alteredActions);
   database.query(
-    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), doctor = ? WHERE id = ?",
-    [notNull, docId, 1, claimId],
+    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), actionRequired = ?, doctor = ? WHERE id = ?",
+    [notNull, docId, alteredActions, 1, claimId],
     function(err, rows, fields) {
       if (err) {
         console.log(err);
