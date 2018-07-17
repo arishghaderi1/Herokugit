@@ -408,16 +408,18 @@ router.post("/createForm", (req, res, next) => {
 */
 router.post("/createForm", (req, res, next) => {
   let appData = {};
-  const claimId = res.locals.claimId;
-  const formId = res.locals.formId;
-  const name = req.body.name;
-  const userId = res.locals.employeeId;
-  const type = req.body.type;
-  const date = new Date();
+  const document = {
+    claimId: res.locals.claimId,
+    referenceId: res.locals.formId,
+    name: req.body.name,
+    userId: res.locals.employeeId,
+    type: req.body.type,
+    createdAt = new Date()
+  }
   if (type === "form") {
     database.query(
-      "INSERT INTO Document (claimId, userId, name, type, data, createdAt) VALUES(?, ?, ?, ?, ?, ?)",
-      [claimId, userId, name, type, formId, date],
+      "INSERT INTO Document SET ?",
+      document,
       function(err, rows, fields) {
         if (err) {
           console.log("Creating Document Error: ");
