@@ -42,9 +42,9 @@ router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   const id = req.body.workHistoryId;
   const claimId = req.body.claimId;
+  const employeeId = req.body.employeeId;
   const data = {
     employerConfirmed: 1,
-    employeeId: req.body.employeeId,
     confirmJob: req.body.confirmJob,
     confirmTasks: req.body.confirmTasks,
     comments: req.body.comments || null
@@ -61,7 +61,7 @@ router.patch("/updateWorkHistory", (req, res, next) => {
     } else {
       appData.error = 0;
       appData["data"] = "Successfully updated Work History for employer!";
-      res.locals.employeeId = data.employeeId;
+      res.locals.employeeId = employeeId;
       res.locals.claimId = claimId;
       next();
     }
@@ -96,14 +96,40 @@ router.patch("/updateWorkHistory", (req, res, next) => {
 });
 
 /**
+ * Get Claim actionRequired object
+ */
+router.patch("/updateWorkHistory", (req, res, next) => {
+  let appData = {};
+  const claimId = res.locals.claimId;
+  database.query(
+    "SELECT actionRequired FROM Claim WHERE id = ?",
+    claimId,
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData);
+      } else {
+        res.locals.actionRequired = rows[0].actionRequired;
+        next();
+      }
+    }
+  );
+});
+
+/**
  * Update employer section of claim to say completed.
  */
 router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
-  const actionRequired = JSON.stringify({});
+  let alteredActions = JSON.parse(res.locals.actionRequired);
+  alteredActions.employer = { state: 0, message: "" };
+  res.locals.actionRequired = alteredActions;
+  alteredActions = JSON.stringify(alteredActions);
   database.query(
-    "UPDATE Claim SET employer = ?, actionRequired = ?",
-    [1, actionRequired],
+    "UPDATE Claim SET employer = ?, actionRequired = ? WHERE id = ?",
+    [1, alteredActions, res.locals.claimId],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -213,6 +239,30 @@ router.patch("/updateWorkHistory", (req, res, next) => {
       } else {
         appData.error = 0;
         appData["data"] = "Successfully updated NodeArray !";
+        next();
+      }
+    }
+  );
+});
+
+/**
+ * Update actionRequired section of Claim for Adjudicator.
+ */
+router.patch("/updateWorkHistory", (req, res, next) => {
+  let appData = {};
+  let alteredActions = JSON.parse(res.locals.actionRequired);
+  alteredActions.adjudicator = { state: 1, message: "Decision Time!" };
+  res.locals.actionRequired = alteredActions;
+  alteredActions = JSON.stringify(alteredActions);
+  database.query(
+    "UPDATE Claim SET actionRequired = ? WHERE id = ?",
+    [1, alteredActions, res.locals.claimId],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
         next();
       }
     }

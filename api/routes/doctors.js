@@ -216,7 +216,7 @@ router.post("/documents", (req, res, next) => {
 /**
  * Check if every form is completed
  */
-router.patch("/documents", (req, res, next) => {
+router.post("/documents", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
 
@@ -246,7 +246,7 @@ router.patch("/documents", (req, res, next) => {
 /**
  * Update Node Array
  */
-router.patch("/documents", (req, res, next) => {
+router.post("/documents", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
 
@@ -271,7 +271,7 @@ router.patch("/documents", (req, res, next) => {
 /**
  * Update Node Array
  */
-router.patch("/documents", (req, res, next) => {
+router.post("/documents", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
   const startDate = res.locals.startDate;

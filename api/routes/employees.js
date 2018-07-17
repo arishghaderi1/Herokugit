@@ -414,25 +414,25 @@ router.post("/createForm", (req, res, next) => {
     name: req.body.name,
     userId: res.locals.employeeId,
     type: req.body.type,
-    createdAt = new Date()
-  }
+    createdAt: new Date()
+  };
   if (type === "form") {
-    database.query(
-      "INSERT INTO Document SET ?",
-      document,
-      function(err, rows, fields) {
-        if (err) {
-          console.log("Creating Document Error: ");
-          console.log(err);
-          appData.error = 1;
-          appData["data"] = "Error Occured!";
-          res.status(400).json(appData);
-        } else {
-          res.locals.docId = rows.insertId;
-          next();
-        }
+    database.query("INSERT INTO Document SET ?", document, function(
+      err,
+      rows,
+      fields
+    ) {
+      if (err) {
+        console.log("Creating Document Error: ");
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
+        res.locals.docId = rows.insertId;
+        next();
       }
-    );
+    });
   } else {
     next();
   }
