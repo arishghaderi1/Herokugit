@@ -152,11 +152,16 @@ START OF CREATE CLAIM CALLS
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
   let claimData = {
-    employeeId: req.body.employeeId,
+    employeeId: req.body.userId,
     doctorId: null,
     companyId: null,
     adjudicatorId: 3,
-    actionRequired: req.body.actionRequired,
+    actionRequired: JSON.stringify({
+      doctor: { state: 1, message: "Please upload adiogram." },
+      employer: { state: 1, message: "Confirm employment records." },
+      employee: { state: 0, message: "" },
+      adjudicator: { state: 1, message: "Claim started." }
+    }),
     createdAt: new Date(),
     injuryType: req.body.injuryType,
     status: "Active",
