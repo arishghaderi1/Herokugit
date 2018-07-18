@@ -3,7 +3,7 @@ const router = express.Router();
 const database = require("../db.js");
 
 /**
- * GET 3 CALLS FOR SETTINGS, NOTIFICATION & CLAIM
+ * GET 3 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
  */
 router.get("/general/:userId", (req, res, next) => {
   let appData = {};
@@ -19,7 +19,8 @@ router.get("/general/:userId", (req, res, next) => {
       console.log(err);
       res.status(400).json(appData);
     } else {
-      res.locals.notification = JSON.parse(rows);
+      res.locals.userId = id;
+      res.locals.notification = JSON.parse(JSON.stringify(rows));
       next();
     }
   });
@@ -29,7 +30,7 @@ router.get("/general/:userId", (req, res, next) => {
   const id = res.locals.userId;
   database.query(
     "SELECT * FROM Claim WHERE employeeId = ? AND status != ?",
-    [id, "inActive"],
+    [id, "Inactive"],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -38,14 +39,14 @@ router.get("/general/:userId", (req, res, next) => {
         res.status(400).json(appData);
       } else {
         if (rows.length > 0) {
-          res.locals.claim = JSON.parse(rows[0]);
+          res.locals.claim = JSON.parse(JSON.stringify(rows[0]));
           next();
         } else {
-          const data = JSON.stringify({
+          const data = {
             notification: res.locals.notification,
             claim: [],
             nodeArray: []
-          });
+          };
           res.status(200).json(data);
         }
       }
@@ -67,11 +68,11 @@ router.get("/general/:userId", (req, res, next) => {
       console.log(err);
       res.status(400).json(appData);
     } else {
-      const data = JSON.stringify({
+      const data = {
         notification: res.locals.notification,
         claim: claim,
-        nodeArray: JSON.parse(rows[0])
-      });
+        nodeArray: JSON.parse(JSON.stringify(rows[0]))
+      };
       res.status(200).json(data);
     }
   });
@@ -280,11 +281,11 @@ router.get("/assignDoctor/:doctorId", (req, res, next) => {
 router.post("/workHistory", (req, res, next) => {
   let appData = {};
   const history = {
-    userId: req.body.userId,
+    employeeId: req.body.userId,
     occupation: req.body.occupation,
-    tasks: req.body.tasks,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
+    tasks: req.body.tasks || null,
+    startDate: req.body.startDate || new Date(),
+    endDate: req.body.endDate || new Date(),
     companyId: req.body.companyId
   };
   database.query("INSERT INTO WorkHistory SET ?", [history], function(
