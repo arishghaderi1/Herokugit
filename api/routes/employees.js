@@ -152,7 +152,7 @@ START OF CREATE CLAIM CALLS
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
   let claimData = {
-    employeeId: req.body.employeeId,
+    employeeId: req.body.userId,
     doctorId: null,
     companyId: null,
     adjudicatorId: 3,
