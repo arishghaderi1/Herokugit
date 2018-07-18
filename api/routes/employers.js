@@ -60,8 +60,6 @@ router.patch("/updateWorkHistory", (req, res, next) => {
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
     } else {
-      appData.error = 0;
-      appData["data"] = "Successfully updated Work History for employer!";
       res.locals.employeeId = employeeId;
       res.locals.claimId = claimId;
       next();
@@ -103,8 +101,6 @@ router.patch("/updateWorkHistory", (req, res, next) => {
 router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
-  console.log("CLAIM ID: ");
-  console.log(claimId);
   database.query(
     "SELECT actionRequired FROM Claim WHERE id = ?",
     claimId,
@@ -115,7 +111,6 @@ router.patch("/updateWorkHistory", (req, res, next) => {
         appData["data"] = err;
         res.status(400).json(appData);
       } else {
-        console.log(rows);
         res.locals.actionRequired = rows[0].actionRequired;
         next();
       }
@@ -130,7 +125,6 @@ router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   let alteredActions = JSON.parse(res.locals.actionRequired);
   alteredActions.employer = { state: 0, message: "" };
-  //res.locals.actionRequired = alteredActions;
   alteredActions = JSON.stringify(alteredActions);
   database.query(
     "UPDATE Claim SET employer = ?, actionRequired = ? WHERE id = ?",
@@ -154,7 +148,6 @@ router.patch("/updateWorkHistory", (req, res, next) => {
 router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
-
   database.query(
     "SELECT id, adjudicatorId, employeeId FROM Claim WHERE id = ? AND employee = ? AND employer = ? AND doctor = ?",
     [claimId, 1, 1, 1],
@@ -170,8 +163,8 @@ router.patch("/updateWorkHistory", (req, res, next) => {
           appData["data"] = "Not all parties are done!";
           res.status(201).json(appData);
         } else {
-          res.locals.adjudicatorId = rows.adjudicatorId;
-          res.locals.employeeId = rows.employeeId;
+          res.locals.adjudicatorId = rows[0].adjudicatorId;
+          res.locals.employeeId = rows[0].employeeId;
           next();
         }
       }
@@ -185,7 +178,6 @@ router.patch("/updateWorkHistory", (req, res, next) => {
 router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
-
   database.query(
     "SELECT Step2 FROM NodeArray WHERE claimId = ?",
     claimId,
@@ -196,9 +188,7 @@ router.patch("/updateWorkHistory", (req, res, next) => {
         appData["data"] = "Error Occured!";
         res.status(400).json(appData);
       } else {
-        appData.error = 0;
-        appData["data"] = "Successfully updated NodeArray !";
-        res.locals.startDate = rows.startDate;
+        res.locals.startDate = JSON.parse(rows[0].Step2).startDate;
         next();
       }
     }
@@ -282,7 +272,7 @@ router.patch("/updateWorkHistory", (req, res, next) => {
 /*
   Send notifications to everybody
 */
-router.post("/updateWorkHistory", (req, res, next) => {
+router.patch("/updateWorkHistory", (req, res, next) => {
   let appData = {};
   const data = [
     {
@@ -310,7 +300,6 @@ router.post("/updateWorkHistory", (req, res, next) => {
       })
     }
   ];
-
   data.map(user => {
     database.query("INSERT INTO Notification SET ?", user, function(
       err,
