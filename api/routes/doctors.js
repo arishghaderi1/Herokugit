@@ -234,8 +234,8 @@ router.post("/documents", (req, res, next) => {
           appData["data"] = "Not all parties are done!";
           res.status(201).json(appData);
         } else {
-          res.locals.adjudicatorId = rows.adjudicatorId;
-          res.locals.employeeId = rows.employeeId;
+          res.locals.adjudicatorId = rows[0].adjudicatorId;
+          res.locals.employeeId = rows[0].employeeId;
           next();
         }
       }
@@ -249,19 +249,17 @@ router.post("/documents", (req, res, next) => {
 router.post("/documents", (req, res, next) => {
   let appData = {};
   const claimId = res.locals.claimId;
-
   database.query(
     "SELECT Step2 FROM NodeArray WHERE claimId = ?",
     claimId,
     function(err, rows, fields) {
       if (err) {
+        console.log(err);
         appData.error = 1;
         appData["data"] = "Error Occured!";
         res.status(400).json(appData);
       } else {
-        appData.error = 0;
-        appData["data"] = "Successfully updated NodeArray !";
-        res.locals.startDate = rows.startDate;
+        res.locals.startDate = JSON.parse(rows[0].Step2).startDate;
         next();
       }
     }
@@ -304,12 +302,38 @@ router.post("/documents", (req, res, next) => {
     [JSON.stringify(nodeArray[0]), JSON.stringify(nodeArray[1]), claimId],
     function(err, rows, fields) {
       if (err) {
+        console.log(err);
         appData.error = 1;
         appData["data"] = "Error Occured!";
         res.status(400).json(appData);
       } else {
         appData.error = 0;
         appData["data"] = "Successfully updated NodeArray !";
+        next();
+      }
+    }
+  );
+});
+
+/**
+ * Update actionRequired section of Claim for Adjudicator.
+ */
+router.post("/documents", (req, res, next) => {
+  let appData = {};
+  let alteredActions = JSON.parse(res.locals.actionRequired);
+  alteredActions.adjudicator = { state: 1, message: "Decision Time!" };
+  res.locals.actionRequired = alteredActions;
+  alteredActions = JSON.stringify(alteredActions);
+  database.query(
+    "UPDATE Claim SET actionRequired = ? WHERE id = ?",
+    [1, alteredActions, res.locals.claimId],
+    function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        res.status(400).json(appData);
+      } else {
         next();
       }
     }
@@ -347,7 +371,6 @@ router.post("/documents", (req, res, next) => {
       })
     }
   ];
-
   data.map(user => {
     database.query("INSERT INTO Notification SET ?", user, function(
       err,
