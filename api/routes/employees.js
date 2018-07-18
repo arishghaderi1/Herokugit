@@ -490,7 +490,7 @@ router.post("/createForm", (req, res, next) => {
     personal: req.body.personal,
     formSpecific: req.body.formSpecific,
     workHistory: req.body.workHistory,
-    consent: req.body.consent,
+    consent: req.body.consent || null,
     status: 1
   };
   database.query("INSERT INTO Form SET ?", formData, function(
