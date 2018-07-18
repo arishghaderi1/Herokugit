@@ -153,8 +153,8 @@ router.post("/createClaim", (req, res, next) => {
   let appData = {};
   let claimData = {
     employeeId: req.body.userId,
-    doctorId: null,
-    companyId: null,
+    doctorId: 4,
+    companyId: 1,
     adjudicatorId: 3,
     actionRequired: JSON.stringify({
       doctor: { state: 1, message: "Please upload adiogram." },
