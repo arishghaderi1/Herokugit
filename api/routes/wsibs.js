@@ -92,7 +92,7 @@ router.post("/decisions", (req, res, next) => {
   const denied = "We're sorry to inform you that your claim has been denied";
   const claimId = req.body.claimId;
   const data = {
-    userId: req.body.adjudicatorId,
+    userId: req.body.employeeId,
     decision: req.body.decision,
     content: !!+req.body.decision ? accepted : denied,
     consent: JSON.stringify({

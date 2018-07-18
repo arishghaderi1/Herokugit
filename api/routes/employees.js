@@ -77,6 +77,25 @@ router.get("/general/:userId", (req, res, next) => {
   });
 });
 
+router.get("/letter/:userId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.userId;
+  database.query("SELECT * FROM Letter WHERE userId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.status(200).json(rows);
+    }
+  });
+});
+
 router.patch("/updateInfo", (req, res, next) => {
   let appData = {};
   const user = {
