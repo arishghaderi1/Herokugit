@@ -120,6 +120,7 @@ router.post("/decisions", (req, res, next) => {
       };
       res.locals.claimId = claimId;
       res.locals.data = data;
+      res.locals.decision = req.body.decision;
       next();
     }
   });
@@ -182,8 +183,15 @@ router.post("/decisions", (req, res, next) => {
   alteredActions.adjudicatorId = { state: 0, message: "" };
   alteredActions = JSON.stringify(alteredActions);
   database.query(
-    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), actionRequired = ?, adjudicator = ? WHERE id = ?",
-    [notNull, docId, alteredActions, 1, claimId],
+    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), status = ?, actionRequired = ?, adjudicator = ? WHERE id = ?",
+    [
+      notNull,
+      docId,
+      !!+res.locals.decision ? "Approved" : "Denied",
+      alteredActions,
+      1,
+      claimId
+    ],
     function(err, rows, fields) {
       if (err) {
         console.log(err);
