@@ -68,12 +68,21 @@ router.get("/general/:userId", (req, res, next) => {
       console.log(err);
       res.status(400).json(appData);
     } else {
-      const data = {
-        notification: res.locals.notification,
-        claim: claim,
-        nodeArray: JSON.parse(JSON.stringify(rows[0]))
-      };
-      res.status(200).json(data);
+      if (rows.length < 1) {
+        const data = {
+          notification: res.locals.notification,
+          claim: claim,
+          nodeArray: []
+        };
+        res.status(200).json(data);
+      } else {
+        const data = {
+          notification: res.locals.notification,
+          claim: claim,
+          nodeArray: JSON.parse(JSON.stringify(rows[0]))
+        };
+        res.status(200).json(data);
+      }
     }
   });
 });
@@ -310,7 +319,7 @@ router.post("/createClaim", (req, res, next) => {
 router.get("/assignDoctor/:doctorId", (req, res, next) => {
   let appData = {};
   const doctorId = req.params.doctorId;
-  database.query("UPDATE CLAIM SET doctorId = ?", doctorId, function(
+  database.query("UPDATE Claim SET doctorId = ?", doctorId, function(
     err,
     rows,
     fields
@@ -477,7 +486,7 @@ router.post("/createForm", (req, res, next) => {
   const formData = {
     name: req.body.name,
     code: req.body.code,
-    userId: req.body.employeeId,
+    userId: req.body.userId,
     personal: req.body.personal,
     formSpecific: req.body.formSpecific,
     workHistory: req.body.workHistory,
