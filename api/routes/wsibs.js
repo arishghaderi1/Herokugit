@@ -35,12 +35,29 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
         console.log(err);
         appData.error = 1;
         appData["data"] = err;
-        res.status(400).json(appData);
+        res.status(400).json(appData); // use 400 for error detections
       } else {
-        res.status(200).json(rows);
+        res.status(200).json(rows); // return soemthing with 200, get but dont return anything with 201
       }
     }
   );
+}); ///
+
+/** Arish's written router codes */
+
+router.get("/Dates", (req, res) => {
+  let appData = {};
+  // Query the database based on Sort parameter
+  database.query("SELECT * FROM NodeArray ", function(err, rows) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = err;
+      res.status(400).json(appData); // use 400 for error detections
+    } else {
+      res.status(200).json(rows); // return soemthing with 200, get but dont return anything with 201
+    }
+  });
 });
 
 router.get("/documents/:claimId", (req, res, next) => {
