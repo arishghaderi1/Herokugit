@@ -3,7 +3,7 @@ const router = express.Router();
 const database = require("../db.js");
 
 /**
- * GET 3 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
+ * GET 2 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
  */
 router.get("/general/:userId", (req, res, next) => {
   let appData = {};
@@ -34,7 +34,7 @@ router.get("/general/:userId", (req, res, next) => {
   const ids = 0;
 
   if (order === "recent") {
-    sortBy = "ORDER BY updatedAt DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
+    sortBy = "ORDER BY updatedAt DESC"; //"updatedAt"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
     stats = "";
   } else if (order === "Inactive") {
     sortBy = "";
