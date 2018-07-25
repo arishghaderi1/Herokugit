@@ -212,7 +212,7 @@ router.post("/createClaim", (req, res, next) => {
       nextSteps:
         "Please see your forms section and ensure you have filled out all of the required information, other parties will also need to fill out their required forms.",
       startDate: date,
-      endDate: "00-00-00 00:00:00"
+      endDate: date
     },
     {
       name: "Information Gathering",
@@ -221,7 +221,7 @@ router.post("/createClaim", (req, res, next) => {
       state: null,
       nextSteps:
         "Once all information from all parties has been received the claim will be reveiwed by an adjudicator who will make a decision.",
-      startDate: "00-00-00 00:00:00",
+      startDate: date,
       endDate: "00-00-00 00:00:00"
     },
     {
@@ -316,30 +316,33 @@ router.post("/createClaim", (req, res, next) => {
  * SEND THEM A NOTIFICATION
  * **************************
  */
-router.get("/assignDoctor/:doctorId", (req, res, next) => {
+router.get("/assignDoctor/:doctorId/:claimId", (req, res, next) => {
   let appData = {};
   const doctorId = req.params.doctorId;
-  database.query("UPDATE Claim SET doctorId = ?", doctorId, function(
-    err,
-    rows,
-    fields
-  ) {
-    if (err) {
-      appData.error = 1;
-      appData["data"] = "Error Occured!";
-      console.log(err);
-      res.status(400).json(appData);
-    } else {
-      res.locals.doctorId = doctorId;
-      next();
+  const claimId = req.params.claimId;
+  database.query(
+    "UPDATE Claim SET doctorId = ? WHERE id = ?",
+    [doctorId, claimId],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        res.locals.doctorId = doctorId;
+        res.locals.claimId = claimId;
+        next();
+      }
     }
-  });
+  );
 });
 
 /*
   Send notification to Doctor
 */
-router.get("/assignDoctor/:doctorId", (req, res, next) => {
+router.get("/assignDoctor/:doctorId/:claimId", (req, res, next) => {
+  console.log("SEND NOTIFICATION: ");
   let appData = {};
   const data = [
     {
@@ -367,13 +370,13 @@ router.get("/assignDoctor/:doctorId", (req, res, next) => {
         appData.error = 1;
         appData["data"] = "Error Occured!";
         res.status(400).json(appData);
+      } else {
+        const claimId = res.locals.claimId;
+        console.log("CLAIM ID: ", claimId);
+        res.status(200).json(claimId);
       }
     });
   });
-  appData.error = 0;
-  appData["data"] =
-    "Successfully assigned doctor to claim and sent notification!";
-  res.status(201).json(appData);
 });
 /**
  * **************************************************************
@@ -487,10 +490,10 @@ router.post("/createForm", (req, res, next) => {
     name: req.body.name,
     code: req.body.code,
     userId: req.body.userId,
-    personal: req.body.personal,
-    formSpecific: req.body.formSpecific,
+    personal: JSON.stringify(req.body.personal),
+    formSpecific: JSON.stringify(req.body.formSpecific),
     workHistory: req.body.workHistory,
-    consent: req.body.consent,
+    consent: req.body.consent || null,
     status: 1
   };
   database.query("INSERT INTO Form SET ?", formData, function(
@@ -505,7 +508,13 @@ router.post("/createForm", (req, res, next) => {
       appData["data"] = "Error Occured!";
       res.status(400).json(appData);
     } else {
-      res.locals.formId = rows.insertId;
+      res.locals.docData = {
+        type: req.body.type,
+        claimId: req.body.claimId,
+        name: req.body.name,
+        createdAt: new Date(),
+        referenceId: rows.insertId
+      };
       next();
     }
   });
@@ -516,15 +525,8 @@ router.post("/createForm", (req, res, next) => {
 */
 router.post("/createForm", (req, res, next) => {
   let appData = {};
-  const document = {
-    claimId: res.locals.claimId,
-    referenceId: res.locals.formId,
-    name: req.body.name,
-    userId: res.locals.employeeId,
-    type: req.body.type,
-    createdAt: new Date()
-  };
-  if (type === "form") {
+  const document = res.locals.docData;
+  if (document.type === "form") {
     database.query("INSERT INTO Document SET ?", document, function(
       err,
       rows,
@@ -538,11 +540,10 @@ router.post("/createForm", (req, res, next) => {
         res.status(400).json(appData);
       } else {
         res.locals.docId = rows.insertId;
+        res.locals.claimId = document.claimId;
         next();
       }
     });
-  } else {
-    next();
   }
 });
 

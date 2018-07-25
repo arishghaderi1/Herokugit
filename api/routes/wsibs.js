@@ -2,6 +2,82 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db.js");
 
+/**
+ * GET 3 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
+ */
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.userId;
+  database.query("SELECT * FROM Notification WHERE userId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.userId = id;
+      res.locals.notification = JSON.parse(JSON.stringify(rows));
+      next();
+    }
+  });
+});
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.wsibId;
+  const order = req.params.order;
+  let sortBy = "";
+  let stats = "progress";
+
+  if (order === "recent") {
+    sortBy = "ORDER BY updatedAt DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
+    stats = "";
+  } else if (order === "Inactive") {
+    sortBy = "";
+    stats = "WHERE Claim.status = 'Inactive'";
+  } else if (order === "Active") {
+    sortBy = "";
+    stats = " WHERE Claim.status = 'Active'";
+  } else if (order === "Pending") {
+    sortBy = "";
+    stats = " WHERE Claim.status = 'Pending Reply'";
+  }
+
+  // Query the database based on Sort parameter
+  database.query(
+    "SELECT User.firstName, Claim.* FROM User INNER JOIN Claim ON User.id = Claim.employeeId" +
+      stats +
+      " AND Claim.adjudicatorId = ?" +
+      sortBy,
+    id,
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        if (rows.length > 0) {
+          const data = {
+            notification: res.locals.notification,
+            claim: rows
+          };
+          res.status(200).json(data);
+        } else {
+          const data = {
+            notification: res.locals.notification,
+            claim: []
+          };
+          res.status(200).json(data);
+        }
+      }
+    }
+  );
+});
+
 router.get("/claims/:wsibId/:order", (req, res, next) => {
   let appData = {};
   const id = req.params.wsibId;
@@ -143,6 +219,7 @@ router.post("/decisions", (req, res, next) => {
       };
       res.locals.claimId = claimId;
       res.locals.data = data;
+      res.locals.decision = req.body.decision;
       next();
     }
   });
@@ -205,8 +282,15 @@ router.post("/decisions", (req, res, next) => {
   alteredActions.adjudicatorId = { state: 0, message: "" };
   alteredActions = JSON.stringify(alteredActions);
   database.query(
-    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), actionRequired = ?, adjudicator = ? WHERE id = ?",
-    [notNull, docId, alteredActions, 1, claimId],
+    "UPDATE Claim SET documents = IFNULL(CONCAT(documents, ?),?), status = ?, actionRequired = ?, adjudicator = ? WHERE id = ?",
+    [
+      notNull,
+      docId,
+      !!+res.locals.decision ? "Approved" : "Denied",
+      alteredActions,
+      1,
+      claimId
+    ],
     function(err, rows, fields) {
       if (err) {
         console.log(err);

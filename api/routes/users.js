@@ -157,6 +157,36 @@ router.post("/register", (req, res, next) => {
   });
   next();
 });
+/*
+ * Create Default Settings
+ */
+router.post("/register", (req, res, next) => {
+  let appData = {};
+  const settings = {
+    userId: res.locals.employeeId,
+    receiveEmailNotif: 0,
+    receiveTextNotif: 0,
+    receiveWeekly: 0,
+    language: "English",
+    fontSize: "20",
+    colorTheme: "light",
+    sideBarScrolled: null,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  database.query("INSERT INTO Settings SET ?", settings, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      res.status(400).json(appData);
+    }
+  });
+  next();
+});
 
 /**
  * Login user in after registration
