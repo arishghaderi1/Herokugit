@@ -212,7 +212,7 @@ router.post("/createClaim", (req, res, next) => {
       nextSteps:
         "Please see your forms section and ensure you have filled out all of the required information, other parties will also need to fill out their required forms.",
       startDate: date,
-      endDate: "00-00-00 00:00:00"
+      endDate: date
     },
     {
       name: "Information Gathering",
@@ -221,7 +221,7 @@ router.post("/createClaim", (req, res, next) => {
       state: null,
       nextSteps:
         "Once all information from all parties has been received the claim will be reveiwed by an adjudicator who will make a decision.",
-      startDate: "00-00-00 00:00:00",
+      startDate: date,
       endDate: "00-00-00 00:00:00"
     },
     {
