@@ -2,6 +2,108 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db.js");
 
+/**
+ * GET 3 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
+ */
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.userId;
+  database.query("SELECT * FROM Notification WHERE userId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.userId = id;
+      res.locals.notification = JSON.parse(JSON.stringify(rows));
+      next();
+    }
+  });
+});
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = res.locals.userId;
+  database.query("SELECT id FROM Company WHERE contactId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.company = rows[0].id;
+    }
+  });
+  database.query(
+    "SELECT * FROM Claim WHERE companyId = ?",
+    res.locals.company,
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        if (rows.length > 0) {
+          console.log(rows);
+          const data = {
+            notification: res.locals.notification,
+            claim: []
+          };
+          res.status(200).json(data);
+        } else {
+          const data = {
+            notification: res.locals.notification,
+            claim: []
+          };
+          res.status(200).json(data);
+        }
+      }
+    }
+  );
+});
+// router.get("/general/:userId", (req, res, next) => {
+//   let appData = {};
+//   const id = res.locals.claim.id;
+//   const claim = res.locals.claim;
+//   database.query("SELECT * FROM NodeArray WHERE claimId = ?", id, function(
+//     err,
+//     rows,
+//     fields
+//   ) {
+//     if (err) {
+//       appData.error = 1;
+//       appData["data"] = "Error Occured!";
+//       console.log(err);
+//       res.status(400).json(appData);
+//     } else {
+//       if (rows.length < 1) {
+//         const data = {
+//           notification: res.locals.notification,
+//           claim: claim,
+//           nodeArray: []
+//         };
+//         res.status(200).json(data);
+//       } else {
+//         const data = {
+//           notification: res.locals.notification,
+//           claim: claim,
+//           nodeArray: JSON.parse(JSON.stringify(rows[0]))
+//         };
+//         res.status(200).json(data);
+//       }
+//     }
+//   });
+// });
+
 router.get("/claims/:employerId", (req, res, next) => {
   let appData = {};
   const id = req.params.employerId;

@@ -27,7 +27,7 @@ router.post("/update/:userId/:setting/:value", (req, res, next) => {
   const setting = req.params.setting;
   const value = req.params.value;
   database.query(
-    "UPDATE Settings SET " + setting + " =? WHERE user_id = ?",
+    "UPDATE Settings SET " + setting + " =? WHERE userId = ?",
     [value, id],
     function(err, rows, fields) {
       if (err) {
