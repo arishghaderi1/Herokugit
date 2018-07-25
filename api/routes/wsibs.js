@@ -8,6 +8,7 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
   const order = req.params.order;
   let sortBy = "";
   let stats = "progress";
+  const ids = 0;
 
   if (order === "recent") {
     sortBy = "ORDER BY updatedAt DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
@@ -28,8 +29,10 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
     "SELECT User.firstName, Claim.* FROM User INNER JOIN Claim ON User.id = Claim.employeeId" +
       stats +
       " AND Claim.adjudicatorId = ?" +
-      sortBy,
-    id,
+      " AND Claim.id NOT IN (?)" +
+      sortBy +
+      " LIMIT 10",
+    [id, ids],
     function(err, rows, fields) {
       if (err) {
         console.log(err);
@@ -48,16 +51,19 @@ router.get("/claims/:wsibId/:order", (req, res, next) => {
 router.get("/Dates", (req, res) => {
   let appData = {};
   // Query the database based on Sort parameter
-  database.query("SELECT * FROM NodeArray ", function(err, rows) {
-    if (err) {
-      console.log(err);
-      appData.error = 1;
-      appData["data"] = err;
-      res.status(400).json(appData); // use 400 for error detections
-    } else {
-      res.status(200).json(rows); // return soemthing with 200, get but dont return anything with 201
+  database.query(
+    "SELECT Step1, Step2, Step3, Step4 FROM NodeArray INNER JOIN Claim ON NodeArray.claimId = Claim.id",
+    function(err, rows) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData); // use 400 for error detections
+      } else {
+        res.status(200).json(rows); // return soemthing with 200, get but dont return anything with 201
+      }
     }
-  });
+  );
 });
 
 router.get("/documents/:claimId", (req, res, next) => {
