@@ -31,6 +31,7 @@ router.get("/general/:userId", (req, res, next) => {
   const order = req.params.order;
   let sortBy = "";
   let stats = "progress";
+  const ids = 0;
 
   if (order === "recent") {
     sortBy = "ORDER BY updatedAt DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
@@ -51,8 +52,10 @@ router.get("/general/:userId", (req, res, next) => {
     "SELECT User.firstName, Claim.* FROM User INNER JOIN Claim ON User.id = Claim.employeeId" +
       stats +
       " AND Claim.adjudicatorId = ?" +
-      sortBy,
-    id,
+      " AND Claim.id NOT IN (?)" +
+      sortBy +
+      " LIMIT 10",
+    [id, ids],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
