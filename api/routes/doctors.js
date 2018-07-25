@@ -2,6 +2,60 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db.js");
 
+/**
+ * GET 2 CALLS FOR NOTIFICATION & CLAIM
+ */
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = req.params.userId;
+  database.query("SELECT * FROM Notification WHERE userId = ?", id, function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      appData.error = 1;
+      appData["data"] = "Error Occured!";
+      console.log(err);
+      res.status(400).json(appData);
+    } else {
+      res.locals.userId = id;
+      res.locals.notification = JSON.parse(JSON.stringify(rows));
+      next();
+    }
+  });
+});
+router.get("/general/:userId", (req, res, next) => {
+  let appData = {};
+  const id = res.locals.userId;
+  database.query(
+    "SELECT * FROM Claim WHERE doctorId = ? AND status != ?",
+    [id, "Inactive"],
+    function(err, rows, fields) {
+      if (err) {
+        appData.error = 1;
+        appData["data"] = "Error Occured!";
+        console.log(err);
+        res.status(400).json(appData);
+      } else {
+        if (rows.length > 0) {
+          const data = {
+            notification: res.locals.notification,
+            claim: rows
+          };
+          res.status(200).json(data);
+        } else {
+          const data = {
+            notification: res.locals.notification,
+            claim: []
+          };
+          res.status(200).json(data);
+        }
+      }
+    }
+  );
+});
+
 router.get("/claims/:currentUserId", (req, res, next) => {
   let appData = {};
   const id = req.params.currentUserId;
