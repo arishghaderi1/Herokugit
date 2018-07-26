@@ -150,7 +150,7 @@ router.get("/clientsinfo/:clientId", (req, res) => {
   let appData = {};
   // Query the database based on Sort parameter
   database.query(
-    "SELECT * FROM User INNER JOIN Claim ON User.id = Claim.id = ?",
+    "SELECT * FROM User WHERE Claim ON User.id = ?",
     [id],
     function(err, rows) {
       if (err) {
