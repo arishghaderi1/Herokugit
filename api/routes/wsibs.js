@@ -142,6 +142,26 @@ router.get("/Dates", (req, res) => {
   );
 });
 
+router.get("/clientsinfo/:clientId", (req, res) => {
+  const id = req.params.clientId;
+  let appData = {};
+  // Query the database based on Sort parameter
+  database.query(
+    "SELECT * FROM User INNER JOIN Claim ON User.id = Claim.id = ?",
+    [id],
+    function(err, rows) {
+      if (err) {
+        console.log(err);
+        appData.error = 1;
+        appData["data"] = err;
+        res.status(400).json(appData); // use 400 for error detections
+      } else {
+        res.status(200).json(rows); // return soemthing with 200, get but dont return anything with 201
+      }
+    }
+  );
+});
+
 router.get("/documents/:claimId", (req, res, next) => {
   let appData = {};
   const claimId = req.params.claimId;
