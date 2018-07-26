@@ -3,7 +3,7 @@ const router = express.Router();
 const database = require("../db.js");
 
 /**
- * GET 3 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
+ * GET 2 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
  */
 router.get("/general/:userId", (req, res, next) => {
   let appData = {};
@@ -31,9 +31,10 @@ router.get("/general/:userId", (req, res, next) => {
   const order = req.params.order;
   let sortBy = "";
   let stats = "progress";
+  const ids = 0;
 
   if (order === "recent") {
-    sortBy = "ORDER BY updatedAt DESC"; //"updated_At"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
+    sortBy = "ORDER BY updatedAt DESC"; //"updatedAt"     // Sort the clients by most recent claims, last updated, Static (inActive), etc
     stats = "";
   } else if (order === "Inactive") {
     sortBy = "";
@@ -51,8 +52,10 @@ router.get("/general/:userId", (req, res, next) => {
     "SELECT User.firstName, Claim.* FROM User INNER JOIN Claim ON User.id = Claim.employeeId" +
       stats +
       " AND Claim.adjudicatorId = ?" +
-      sortBy,
-    id,
+      " AND Claim.id NOT IN (?)" +
+      sortBy +
+      " LIMIT 10",
+    [id, ids],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
