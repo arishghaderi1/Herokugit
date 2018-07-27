@@ -6,6 +6,7 @@ const database = require("../db.js");
  * GET 2 CALLS FOR NOTIFICATION, CLAIM & NODE ARRAY
  */
 router.get("/general/:userId", (req, res, next) => {
+  console.log("First");
   let appData = {};
   const id = req.params.userId;
   database.query("SELECT * FROM Notification WHERE userId = ?", id, function(
@@ -26,11 +27,12 @@ router.get("/general/:userId", (req, res, next) => {
   });
 });
 router.get("/general/:userId", (req, res, next) => {
+  console.log("Seconds");
   let appData = {};
   const id = req.params.wsibId;
   const order = req.params.order;
   let sortBy = "";
-  let stats = "progress";
+  let stats = "";
   const ids = 0;
 
   if (order === "recent") {
