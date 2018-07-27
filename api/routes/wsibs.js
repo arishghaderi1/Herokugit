@@ -166,6 +166,25 @@ router.get("/clientsinfo/:userId", (req, res) => {
   });
 });
 
+router.get("/companyinfo/:companyId", (req, res) => {
+  const id = req.params.companyId;
+  let appData = {};
+  // Query the database based on Sort parameter
+  database.query("SELECT * FROM Company WHERE Company.id = ?", [id], function(
+    err,
+    rows
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = err;
+      res.status(400).json(appData); // use 400 for error detections
+    } else {
+      res.status(200).json(rows); // return soemthing with 200, get but dont return anything with 201
+    }
+  });
+});
+
 router.get("/documents/:claimId", (req, res, next) => {
   let appData = {};
   const claimId = req.params.claimId;
