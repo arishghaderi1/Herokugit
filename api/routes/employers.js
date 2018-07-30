@@ -27,6 +27,7 @@ router.get("/general/:userId", (req, res, next) => {
 });
 router.get("/general/:userId", (req, res, next) => {
   let appData = {};
+  let company = -1;
   const id = res.locals.userId;
   database.query("SELECT id FROM Company WHERE contactId = ?", id, function(
     err,
@@ -40,8 +41,11 @@ router.get("/general/:userId", (req, res, next) => {
       res.status(400).json(appData);
     } else {
       res.locals.company = rows[0].id;
+      next();
     }
   });
+});
+router.get("/general/:userId", (req, res, next) => {
   database.query(
     "SELECT * FROM Claim WHERE companyId = ?",
     res.locals.company,
@@ -53,10 +57,9 @@ router.get("/general/:userId", (req, res, next) => {
         res.status(400).json(appData);
       } else {
         if (rows.length > 0) {
-          console.log(rows);
           const data = {
             notification: res.locals.notification,
-            claim: []
+            claim: rows
           };
           res.status(200).json(data);
         } else {

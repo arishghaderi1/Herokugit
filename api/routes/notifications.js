@@ -25,7 +25,7 @@ router.get("/update/:notifId", function(req, res) {
   let appData = {};
   const id = req.params.notifId;
   database.query(
-    "UPDATE Notification SET isRead = 1 WHERE id = 9",
+    "UPDATE Notification SET isRead = 1 WHERE id = ?",
     [id],
     function(err, rows, fields) {
       if (!err) {
