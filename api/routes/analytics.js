@@ -12,10 +12,20 @@ router.post("/Claims", (req, res, next) => {
   const action = req.body.action;
   const nullTime = new Date();
   const time = nullTime + ",";
+  const newaddition = JSON.stringify({
+    step: nodeNum,
+    action: action,
+    time: nullTime
+  });
+  const newaddition2 =
+    JSON.stringify({
+      step: nodeNum,
+      action: action,
+      time: nullTime
+    }) + ",";
   database.query(
-    "UPDATE Claim SET dates = IFNULL(CONCAT(dates, '_STEP::',?,'-',?,'-',?),?) WHERE id = ?",
-    [nodeNum, action, nullTime, action, nullTime, claimId],
-
+    "UPDATE Claim SET dates = IFNULL(CONCAT(dates, ? ',' ),?) WHERE id = ?",
+    [newaddition, newaddition2, claimId],
     function(err, rows, fields) {
       if (err) {
         appData.error = 1;
@@ -31,54 +41,24 @@ router.post("/Claims", (req, res, next) => {
   );
 });
 
-// date viewed (Read) stamp
-router.post("/Analytics/:claimId/:node/", (req, res, next) => {
+// Read the Textfield containing all the DateStamps
+router.get("/getdates/:userID", (req, res, next) => {
   let appData = {};
-  const claimId = res.locals.claimId;
-  const nodeNum = res.locals.node;
-  const viewed_date = new Date();
-  appData = {
-    viewed_at: viewed_date
-  };
-  database.query(
-    "INSERT INTO analytics where claimId = ? , nodeNum = ?",
-    [claimId, nodeNum],
-    function(err, rows, fields) {
-      if (err) {
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        res.status(400).json(appData);
-      } else {
-        appData.error = 0;
-        res.status(201).json(appData);
-      }
+  const id = req.params.userID;
+  database.query("SELECT Claim.dates FROM Claim WHERE id = ?", [id], function(
+    err,
+    rows,
+    fields
+  ) {
+    if (err) {
+      console.log(err);
+      appData.error = 1;
+      appData["data"] = err;
+      res.status(400).json(appData);
+    } else {
+      res.status(200).json(rows); // return soemthing with 200, get but dont return anything with 201
     }
-  );
-});
-
-//  updated stamp
-router.post("/Analytics/:claimId/:node/", (req, res, next) => {
-  let appData = {};
-  const claimId = res.locals.claimId;
-  const nodeNum = res.locals.node;
-  const updated = new Date();
-  appData = {
-    updated_at: updated
-  };
-  database.query(
-    "INSERT INTO analytics where claimId = ? , nodeNum = ?",
-    [claimId, nodeNum],
-    function(err, rows, fields) {
-      if (err) {
-        appData.error = 1;
-        appData["data"] = "Error Occured!";
-        res.status(400).json(appData);
-      } else {
-        appData.error = 0;
-        res.status(201).json(appData);
-      }
-    }
-  );
+  });
 });
 
 module.exports = router;
