@@ -22,9 +22,9 @@ router.post("/Claims", (req, res, next) => {
       step: nodeNum,
       action: action,
       time: nullTime
-    }) + ",";
+    }) + "~";
   database.query(
-    "UPDATE Claim SET dates = IFNULL(CONCAT(dates, ? ',' ),?) WHERE id = ?",
+    "UPDATE Claim SET dates = IFNULL(CONCAT(dates, ? '~' ),?) WHERE id = ?",
     [newaddition, newaddition2, claimId],
     function(err, rows, fields) {
       if (err) {
