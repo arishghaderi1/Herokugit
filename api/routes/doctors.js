@@ -56,9 +56,12 @@ router.get("/general/:userId", (req, res, next) => {
   );
 });
 
-router.get("/claims/:currentUserId", (req, res, next) => {
+/**
+ * ! Should get rid of this call and replace with POST below.
+ */
+router.get("/claims/:userId", (req, res, next) => {
   let appData = {};
-  const id = req.params.currentUserId;
+  const id = req.params.userId;
 
   database.query(
     "SELECT User.firstName, User.lastName, User.email, User.phone as phone, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim INNER JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, employeeId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.employeeId WHERE Claim.doctorId = ? ORDER BY createdAt DESC",
@@ -74,10 +77,18 @@ router.get("/claims/:currentUserId", (req, res, next) => {
     }
   );
 });
+/**
+ * ! ********************************************************
+ */
 
-router.post("/claims/:currentUserId", (req, res, next) => {
+/**
+ * POST method to return all the claims associated with the userId (doctorId in Claim table).
+ * * Can be given additional list of ids already listed to limit number of claims returned,
+ * * ie pagination using limits of claims.
+ */
+router.post("/claims/:userId", (req, res, next) => {
   let appData = {};
-  const id = req.params.currentUserId;
+  const id = req.params.userId;
   const list = req.body.currentList.length > 0 ? req.body.currentList : 0;
   database.query(
     "SELECT User.name as name, User.email as email, User.phone as phone, User.id as userId, Claim.*, ServiceHistory.recentServiceDate, ServiceHistory.servicesProvided FROM Claim LEFT JOIN User ON User.id = Claim.employeeId LEFT JOIN(SELECT MAX(date) recentServiceDate, servicesProvided, id, employeeId FROM ServiceHistory GROUP BY id LIMIT 1) ServiceHistory ON Claim.employeeId = ServiceHistory.employeeId WHERE Claim.doctorId = ? AND Claim.id NOT IN (?) LIMIT 20",
@@ -94,7 +105,13 @@ router.post("/claims/:currentUserId", (req, res, next) => {
     }
   );
 });
+/**
+ * ***********************************************************
+ */
 
+/**
+ * ! I don't think this route is used. Should delete.
+ */
 router.get("/patientInfo/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
@@ -113,7 +130,13 @@ router.get("/patientInfo/:claimId", (req, res, next) => {
     }
   );
 });
+/**
+ * ! ******************************************************
+ */
 
+/**
+ * ! Again I don't believe this route is in use. Should delete.
+ */
 router.get("/audiograms/:claimId", (req, res, next) => {
   let appData = {};
   const id = req.params.claimId;
@@ -132,6 +155,9 @@ router.get("/audiograms/:claimId", (req, res, next) => {
     }
   });
 });
+/**
+ * ! ******************************************************
+ */
 
 /**
  * Get all audiograms associate with claimId
@@ -159,8 +185,8 @@ router.get("/documents/:claimId", (req, res, next) => {
  */
 
 /**
- * Create Audiogram Asset & then create Document to Reference Asset
- * Finally append Document to Claim
+ * Create Audiogram Asset & then create Document to Reference Asset.
+ * Finally append Document to Claim.
  */
 router.post("/documents", (req, res, next) => {
   let appData = {};
@@ -448,6 +474,11 @@ router.post("/documents", (req, res, next) => {
  * ****************************************************************
  */
 
+/**
+ * This is used to check a patients service history.
+ * The data will be compared against the grid to see when certain codes
+ * and services are eligible to be billed.
+ */
 router.get("/serviceHistory/:employeeId", (req, res, next) => {
   let appData = {};
   const id = req.params.employeeId;
@@ -466,7 +497,13 @@ router.get("/serviceHistory/:employeeId", (req, res, next) => {
     }
   );
 });
+/**
+ * ****************************************************************
+ */
 
+/**
+ * Gets the most up to date grid.
+ */
 router.get("/grid", (req, res, next) => {
   let appData = {};
   database.query("SELECT * FROM ServiceGrid", function(err, rows, fields) {
@@ -480,7 +517,15 @@ router.get("/grid", (req, res, next) => {
     }
   });
 });
+/**
+ * ****************************************************************
+ */
 
+/**
+ * ! I don't think this route is in use.
+ * ! However may be important for future when audiograms are submitted
+ * ! entirely electronically and not uploaded in a photo / document.
+ */
 router.post("/updateAudiogram", (req, res, next) => {
   let appData = {};
   let data = {
@@ -531,7 +576,14 @@ router.post("/updateAudiogram", (req, res, next) => {
     );
   }
 });
+/**
+ * ! ************************************************************************
+ */
 
+/**
+ * Search function for a patient.
+ * ! For security reasons I don't think we can use this just yet.
+ */
 router.get("/findPatient/:searchValue", (req, res, next) => {
   let appData = {};
   const searchValue = req.params.searchValue;
@@ -550,7 +602,15 @@ router.get("/findPatient/:searchValue", (req, res, next) => {
     }
   );
 });
+/**
+ * ! ************************************************************************
+ */
 
+/**
+ * **********************************************
+ * WHEN A DOCTOR STARTS A CLAIM WITH AN AUDIOGRAM
+ * **********************************************
+ */
 router.post("/createClaim", (req, res, next) => {
   let appData = {};
   let claimData = {
@@ -725,5 +785,8 @@ router.post("/createClaim", (req, res, next) => {
     );
   });
 });
+/**
+ * *****************************************************************
+ */
 
 module.exports = router;

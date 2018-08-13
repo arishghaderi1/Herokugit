@@ -173,7 +173,7 @@ router.post("/createClaim", (req, res, next) => {
     }),
     createdAt: new Date(),
     injuryType: req.body.injuryType,
-    status: "Active",
+    status: "Pending",
     notes: req.body.notes || ""
   };
   database.query("INSERT INTO Claim SET ? ", claimData, function(
